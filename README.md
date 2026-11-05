@@ -4,14 +4,38 @@ One idempotent script that installs and configures **RetroArch on an Apple Silic
 (built and tested on a MacBook Air M4, macOS Tahoe 26), driven 100 % by an
 **8BitDo SN30 Pro** over Bluetooth: no mouse, no keyboard.
 
+![Street Fighter II with the arcade CRT preset on a MacBook Air M4](docs/images/hero-arcade-sf2.jpg)
+
 * Native RetroArch (universal build) with **Vulkan through MoltenVK**, never the Metal driver.
 * One recommended core per system, chosen for accuracy first (an M4 runs all of them full speed).
 * ROM folders renamed to the **libretro-database** names, so folders, playlists and thumbnails all share one name.
 * MAME romset analysis against each core's DAT, with **per-game core routing** (mame2010 + mame2003-plus).
-* CRT shaders (no curvature) and LCD shaders + colour correction for handhelds, one preset per system.
+* CRT shaders tuned on the M4's own panel: **arcade slot mask** for MAME/Neo Geo, **Sony Trinitron aperture grille** for TV consoles, dot-matrix LCD for handhelds. No curvature.
 * Pixel-art menu font (Pixelify Sans, SIL OFL 1.1).
 * **Gameplay snapshots only** (libretro-thumbnails `Named_Snaps`), normalized to one canvas size.
 * Permanent cache on the external disk: after a reformat, it works **offline**.
+
+## What it looks like
+
+Captured on a MacBook Air M4 at normal brightness, from the same frame with and without the
+shader, and shrunk the way macOS shrinks RetroArch's picture for the panel (so this is what the
+screen shows). The close-ups are the shader's own output, magnified 3× with no smoothing, so
+the phosphor structure is visible on GitHub.
+
+| | Raw pixels | This setup | Phosphor close-up |
+|---|---|---|---|
+| **Arcade** (MAME, `crt-arcade`) | ![Street Fighter II, raw pixels](docs/images/sf2-raw.jpg) | ![Street Fighter II, arcade CRT preset](docs/images/sf2-crt.jpg) | ![Slot mask close-up](docs/images/sf2-closeup.png) |
+| **SNES** (and every TV console, `crt-console`) | ![Super Mario World, raw pixels](docs/images/smw-raw.jpg) | ![Super Mario World, Trinitron preset](docs/images/smw-crt.jpg) | ![Aperture grille close-up](docs/images/smw-closeup.png) |
+
+* **Arcade: slot mask**, the phosphor structure of the arcade monitors of the 90s (Nanao,
+  Toshiba, Hantarex): staggered phosphor cells, deep scanlines, rich colours and a soft glow.
+* **TV consoles: aperture grille**, the continuous vertical red-green-blue phosphor stripes of a
+  **Sony Trinitron** TV, the screen most of these games were played on at home.
+
+Both looks were chosen by comparing four candidates on the same frames, on this panel; see
+[Shaders](#shaders-one-preset-per-system) for the details.
+
+## Disk layout
 
 Everything the script needs lives in two places on the external disk:
 

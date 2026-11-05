@@ -31,6 +31,9 @@ Named_Boxarts/
 Named_Titles/
 *.png
 *.jpg
+# ...except the README screenshots
+!docs/images/*.png
+!docs/images/*.jpg
 *.dmg
 *.dylib
 *.lpl
