@@ -1,0 +1,13 @@
+# retroarch-mac-setup shader preset. Installed to <RetroArch>/shaders/retroarch-mac-setup/,
+# next to the official slang-shaders pack in <RetroArch>/shaders/shaders_slang/.
+# TV look for every home console (SNES, NES, Genesis, Master System, PlayStation, PC Engine,
+# Atari ...), chosen by comparing four candidates on the same frames of Super Mario World and
+# Sonic on the MacBook Air M4 (scaled Retina mode, normal brightness): crt-hyllian (Hyllian)
+# with an APERTURE GRILLE mask, the phosphor structure of Sony Trinitron TVs. Everything else
+# stays at the shader's own defaults (that is the version that was chosen): full-strength
+# mask, no extra glow, natural brightness. Same family as the arcade preset (slot mask).
+#reference "../shaders_slang/crt/crt-hyllian.slangp"
+# No curvature
+h_curvature = "0.000000"
+# Aperture grille (layouts 1-6)
+PHOSPHOR_LAYOUT = "1.000000"

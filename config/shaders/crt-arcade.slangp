@@ -1,0 +1,20 @@
+# retroarch-mac-setup shader preset. Installed to <RetroArch>/shaders/retroarch-mac-setup/,
+# next to the official slang-shaders pack in <RetroArch>/shaders/shaders_slang/.
+# Arcade monitor look, chosen by comparing four candidates on the same frame of Street
+# Fighter II on the MacBook Air M4 (scaled Retina mode, normal brightness):
+# crt-hyllian (Hyllian) with a SLOT mask, the phosphor structure of the arcade monitors of the
+# era (Nanao, Toshiba, Hantarex), rich colours and a soft glow around bright areas.
+#reference "../shaders_slang/crt/crt-hyllian.slangp"
+# No curvature
+h_curvature = "0.000000"
+# Slot mask (layouts 11-14), at 4K size so it survives macOS's scaling to the panel
+PHOSPHOR_LAYOUT = "12.000000"
+MASK_STRENGTH = "0.600000"
+DISPLAY_RES = "1.000000"
+# Scanline beam: thinner on dark pixels, full on bright ones
+BEAM_MIN_WIDTH = "0.720000"
+BEAM_MAX_WIDTH = "1.000000"
+# Brightness compensation for mask + scanlines, and phosphor glow
+BRIGHTBOOST = "1.450000"
+GLOW_ENABLE = "1.000000"
+GLOW_STRENGTH = "0.150000"

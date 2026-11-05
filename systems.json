@@ -1,0 +1,299 @@
+{
+  "_comment": [
+    "System map used by setup.sh. Key = libretro-database system name, which is also the ROM folder name,",
+    "the playlist name and the libretro-thumbnails folder name.",
+    "esde_names: EmulationStation/ES-DE short folder names that will be proposed for renaming.",
+    "cores: ordered list of libretro cores (first = default). Arcade systems may route per game.",
+    "dat: libretro-database metadat folder used for CRC identification (no-intro | redump | null).",
+    "bios.mode: all = every listed file needed, one_of = at least one, optional = nice to have.",
+    "aspect: \"4:3\" = TV console shown at 4:3 (per-folder override); missing = aspect reported by the core.",
+    "shader: preset file in config/shaders/ (without extension) or 'none'.",
+    "overrides: per-core retroarch.cfg overrides (e.g. glcore fallback when Vulkan/MoltenVK fails).",
+    "core_options: option values written to config/<core>/<core>.opt; for systems with several cores use {\"<core>\": {...}}."
+  ],
+  "systems": {
+    "MAME": {
+      "esde_names": ["arcade", "mame", "mame-advmame", "mame-libretro"],
+      "type": "arcade",
+      "cores": ["mame2010", "mame2003_plus"],
+      "extensions": ["zip"],
+      "dat": null,
+      "bios": {"mode": "optional", "files": []},
+      "core_options": {"mame2003_plus": {"mame2003-plus_xy_device": "disabled", "mame2003-plus_input_interface": "retropad", "mame2003-plus_mame_remapping": "enabled"}},
+      "shader": "crt-arcade"
+    },
+    "FBNeo - Arcade Games": {
+      "esde_names": ["fbneo", "fba", "cps", "cps1", "cps2", "cps3"],
+      "type": "arcade",
+      "cores": ["fbneo"],
+      "extensions": ["zip", "7z"],
+      "dat": null,
+      "bios": {"mode": "optional", "files": []},
+      "shader": "crt-arcade"
+    },
+    "SNK - Neo Geo": {
+      "esde_names": ["neogeo"],
+      "type": "arcade",
+      "cores": ["fbneo"],
+      "extensions": ["zip", "7z"],
+      "dat": null,
+      "bios": {"mode": "optional", "files": [], "note": "neogeo.zip must sit next to the games in the ROM folder."},
+      "shader": "crt-arcade"
+    },
+    "Atari - 2600": {
+      "esde_names": ["atari2600"],
+      "type": "console",
+      "aspect": "4:3",
+      "cores": ["stella"],
+      "extensions": ["a26", "bin", "zip"],
+      "dat": "no-intro",
+      "bios": {"mode": "optional", "files": []},
+      "shader": "crt-console"
+    },
+    "Atari - 7800": {
+      "esde_names": ["atari7800"],
+      "type": "console",
+      "aspect": "4:3",
+      "cores": ["prosystem"],
+      "extensions": ["a78", "bin", "zip"],
+      "dat": "no-intro",
+      "bios": {"mode": "optional", "files": [{"file": "7800 BIOS (U).rom", "md5": "0763f1ffb006ddbe32e52d497ee848ae", "desc": "Atari 7800 BIOS"}]},
+      "shader": "crt-console"
+    },
+    "Atari - Lynx": {
+      "esde_names": ["atarilynx", "lynx"],
+      "type": "handheld",
+      "cores": ["handy"],
+      "extensions": ["lnx", "lyx", "o", "zip"],
+      "dat": "no-intro",
+      "bios": {"mode": "all", "files": [{"file": "lynxboot.img", "md5": "fcd403db69f54290b51035d82f835e7b", "desc": "Lynx boot ROM"}]},
+      "shader": "lcd-dot"
+    },
+    "Nintendo - Nintendo Entertainment System": {
+      "esde_names": ["nes", "famicom"],
+      "type": "console",
+      "aspect": "4:3",
+      "cores": ["mesen"],
+      "extensions": ["nes", "unf", "unif", "zip"],
+      "dat": "no-intro",
+      "bios": {"mode": "optional", "files": []},
+      "shader": "crt-console"
+    },
+    "Nintendo - Family Computer Disk System": {
+      "esde_names": ["fds"],
+      "type": "console",
+      "aspect": "4:3",
+      "cores": ["mesen"],
+      "extensions": ["fds", "zip"],
+      "dat": "no-intro",
+      "bios": {"mode": "all", "files": [{"file": "disksys.rom", "md5": "ca30b50f880eb660a320674ed365ef7a", "desc": "Famicom Disk System BIOS"}]},
+      "shader": "crt-console"
+    },
+    "Nintendo - Super Nintendo Entertainment System": {
+      "esde_names": ["snes", "snesna", "sfc"],
+      "type": "console",
+      "aspect": "4:3",
+      "cores": ["bsnes"],
+      "extensions": ["sfc", "smc", "swc", "fig", "bs", "zip"],
+      "dat": "no-intro",
+      "bios": {"mode": "optional", "files": []},
+      "shader": "crt-console"
+    },
+    "Nintendo - Nintendo 64": {
+      "esde_names": ["n64"],
+      "type": "console",
+      "aspect": "4:3",
+      "cores": ["mupen64plus_next"],
+      "extensions": ["n64", "v64", "z64", "zip"],
+      "dat": "no-intro",
+      "bios": {"mode": "optional", "files": []},
+      "shader": "none",
+      "overrides": {"video_driver": "glcore"},
+      "_note": "GLideN64 is OpenGL; ParaLLEl-RDP needs Vulkan features MoltenVK does not expose, so this core gets a glcore override."
+    },
+    "Nintendo - Game Boy": {
+      "esde_names": ["gb"],
+      "type": "handheld",
+      "cores": ["gambatte"],
+      "extensions": ["gb", "dmg", "zip"],
+      "dat": "no-intro",
+      "bios": {"mode": "optional", "files": [{"file": "gb_bios.bin", "md5": "32fbbd84168d3482956eb3c5051637f5", "desc": "Game Boy boot ROM"}]},
+      "shader": "lcd-dot"
+    },
+    "Nintendo - Game Boy Color": {
+      "esde_names": ["gbc"],
+      "type": "handheld",
+      "cores": ["gambatte"],
+      "extensions": ["gbc", "zip"],
+      "dat": "no-intro",
+      "bios": {"mode": "optional", "files": [{"file": "gbc_bios.bin", "md5": "dbfce9db9deaa2567f6a84fde55f9680", "desc": "Game Boy Color boot ROM"}]},
+      "shader": "lcd-dot",
+      "core_options": {"gambatte_gbc_color_correction": "disabled"}
+    },
+    "Nintendo - Game Boy Advance": {
+      "esde_names": ["gba"],
+      "type": "handheld",
+      "cores": ["mgba"],
+      "extensions": ["gba", "zip"],
+      "dat": "no-intro",
+      "bios": {"mode": "optional", "files": [{"file": "gba_bios.bin", "md5": "a860e8c0b6d573d191e4ec7db1b1e4f6", "desc": "GBA BIOS (mGBA has an HLE fallback)"}]},
+      "shader": "lcd-dot",
+      "core_options": {"mgba_color_correction": "OFF", "mgba_interframe_blending": "mix_smart"}
+    },
+    "Nintendo - Virtual Boy": {
+      "esde_names": ["virtualboy"],
+      "type": "console",
+      "cores": ["mednafen_vb"],
+      "extensions": ["vb", "vboy", "zip"],
+      "dat": "no-intro",
+      "bios": {"mode": "optional", "files": []},
+      "shader": "none"
+    },
+    "Sega - Master System - Mark III": {
+      "esde_names": ["mastersystem", "mark3"],
+      "type": "console",
+      "aspect": "4:3",
+      "cores": ["genesis_plus_gx"],
+      "extensions": ["sms", "zip"],
+      "dat": "no-intro",
+      "bios": {"mode": "optional", "files": [
+        {"file": "bios_U.sms", "md5": "840481177270d5642a14ca71ee72844c", "desc": "Master System US BIOS"},
+        {"file": "bios_E.sms", "md5": "840481177270d5642a14ca71ee72844c", "desc": "Master System EU BIOS"},
+        {"file": "bios_J.sms", "md5": "24a519c53f67b00640d0048ef7089105", "desc": "Master System JP BIOS"}]},
+      "shader": "crt-console"
+    },
+    "Sega - Mega Drive - Genesis": {
+      "esde_names": ["genesis", "megadrive", "megadrivejp"],
+      "type": "console",
+      "aspect": "4:3",
+      "cores": ["genesis_plus_gx"],
+      "extensions": ["md", "gen", "smd", "bin", "zip"],
+      "dat": "no-intro",
+      "bios": {"mode": "optional", "files": []},
+      "shader": "crt-console"
+    },
+    "Sega - Game Gear": {
+      "esde_names": ["gamegear"],
+      "type": "handheld",
+      "cores": ["genesis_plus_gx"],
+      "extensions": ["gg", "zip"],
+      "dat": "no-intro",
+      "bios": {"mode": "optional", "files": []},
+      "shader": "lcd-dot"
+    },
+    "Sega - SG-1000": {
+      "esde_names": ["sg-1000"],
+      "type": "console",
+      "aspect": "4:3",
+      "cores": ["genesis_plus_gx"],
+      "extensions": ["sg", "zip"],
+      "dat": "no-intro",
+      "bios": {"mode": "optional", "files": []},
+      "shader": "crt-console"
+    },
+    "Sega - 32X": {
+      "esde_names": ["sega32x", "sega32xna", "sega32xjp"],
+      "type": "console",
+      "aspect": "4:3",
+      "cores": ["picodrive"],
+      "extensions": ["32x", "zip"],
+      "dat": "no-intro",
+      "bios": {"mode": "optional", "files": []},
+      "shader": "crt-console"
+    },
+    "Sega - Mega-CD - Sega CD": {
+      "esde_names": ["segacd", "megacd", "megacdjp"],
+      "type": "console",
+      "aspect": "4:3",
+      "cores": ["genesis_plus_gx"],
+      "extensions": ["cue", "chd", "iso", "m3u"],
+      "dat": "redump",
+      "bios": {"mode": "one_of", "files": [
+        {"file": "bios_CD_U.bin", "md5": "2efd74e3232ff260e371b99f84024f7f", "desc": "Sega CD US BIOS"},
+        {"file": "bios_CD_E.bin", "md5": "e66fa1dc5820d254611fdcdba0662372", "desc": "Mega-CD EU BIOS"},
+        {"file": "bios_CD_J.bin", "md5": "278a9397d192149e84e820ac621a8edd", "desc": "Mega-CD JP BIOS"}]},
+      "shader": "crt-console"
+    },
+    "Sega - Saturn": {
+      "esde_names": ["saturn", "saturnjp"],
+      "type": "console",
+      "aspect": "4:3",
+      "cores": ["mednafen_saturn"],
+      "extensions": ["cue", "chd", "ccd", "m3u"],
+      "dat": "redump",
+      "bios": {"mode": "one_of", "files": [
+        {"file": "mpr-17933.bin", "md5": "3240872c70984b6cbfda1586cab68dbe", "desc": "Saturn US/EU BIOS"},
+        {"file": "sega_101.bin", "md5": "85ec9ca47d8f6807718151cbcca8b964", "desc": "Saturn JP BIOS"}]},
+      "shader": "crt-console"
+    },
+    "Sony - PlayStation": {
+      "esde_names": ["psx"],
+      "type": "console",
+      "aspect": "4:3",
+      "cores": ["swanstation"],
+      "extensions": ["cue", "chd", "pbp", "m3u", "iso", "img"],
+      "dat": "redump",
+      "bios": {"mode": "one_of", "files": [
+        {"file": "scph5501.bin", "md5": "490f666e1afb15b7362b406ed1cea246", "desc": "PS1 US BIOS (SCPH-5501)"},
+        {"file": "scph5500.bin", "md5": "8dd7d5296a650fac7319bce665a6a53c", "desc": "PS1 JP BIOS (SCPH-5500)"},
+        {"file": "scph5502.bin", "md5": "32736f17079d0b2b7024407c39bd3050", "desc": "PS1 EU BIOS (SCPH-5502)"}]},
+      "shader": "crt-console"
+    },
+    "NEC - PC Engine - TurboGrafx 16": {
+      "esde_names": ["pcengine", "tg16"],
+      "type": "console",
+      "aspect": "4:3",
+      "cores": ["mednafen_pce_fast"],
+      "extensions": ["pce", "zip"],
+      "dat": "no-intro",
+      "bios": {"mode": "optional", "files": []},
+      "shader": "crt-console"
+    },
+    "NEC - PC Engine CD - TurboGrafx-CD": {
+      "esde_names": ["pcenginecd", "tg-cd"],
+      "type": "console",
+      "aspect": "4:3",
+      "cores": ["mednafen_pce_fast"],
+      "extensions": ["cue", "chd", "ccd", "m3u"],
+      "dat": "redump",
+      "bios": {"mode": "all", "files": [{"file": "syscard3.pce", "md5": "38179df8f4ac870017db21ebcbf53114", "desc": "Super CD-ROM2 System Card 3.0"}]},
+      "shader": "crt-console"
+    },
+    "SNK - Neo Geo Pocket": {
+      "esde_names": ["ngp"],
+      "type": "handheld",
+      "cores": ["mednafen_ngp"],
+      "extensions": ["ngp", "zip"],
+      "dat": "no-intro",
+      "bios": {"mode": "optional", "files": []},
+      "shader": "lcd-dot"
+    },
+    "SNK - Neo Geo Pocket Color": {
+      "esde_names": ["ngpc"],
+      "type": "handheld",
+      "cores": ["mednafen_ngp"],
+      "extensions": ["ngc", "ngpc", "npc", "zip"],
+      "dat": "no-intro",
+      "bios": {"mode": "optional", "files": []},
+      "shader": "lcd-dot"
+    },
+    "Bandai - WonderSwan": {
+      "esde_names": ["wonderswan"],
+      "type": "handheld",
+      "cores": ["mednafen_wswan"],
+      "extensions": ["ws", "zip"],
+      "dat": "no-intro",
+      "bios": {"mode": "optional", "files": []},
+      "shader": "lcd-dot"
+    },
+    "Bandai - WonderSwan Color": {
+      "esde_names": ["wonderswancolor"],
+      "type": "handheld",
+      "cores": ["mednafen_wswan"],
+      "extensions": ["wsc", "zip"],
+      "dat": "no-intro",
+      "bios": {"mode": "optional", "files": []},
+      "shader": "lcd-dot"
+    }
+  }
+}

@@ -1,0 +1,10 @@
+# retroarch-mac-setup shader preset. Installed to <RetroArch>/shaders/retroarch-mac-setup/,
+# next to the official slang-shaders pack in <RetroArch>/shaders/shaders_slang/.
+# Handheld LCD look for every handheld (Game Boy, GBC, GBA, Game Gear, Lynx, NGP, WonderSwan):
+# a soft dot-matrix pixel grid with no RGB sub-pixel stripes (those turn into moire in the
+# scaled Retina mode) and no "dull original LCD" colour emulation, so the picture stays bright
+# and vivid. Measured: ~109% of the unfiltered brightness, same colour saturation.
+#reference "../shaders_slang/handheld/dot.slangp"
+gamma = "2.000000"
+shine = "0.100000"
+blend = "0.800000"
