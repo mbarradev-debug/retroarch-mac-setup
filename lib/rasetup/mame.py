@@ -8,22 +8,30 @@ import zipfile
 from .common import CACHE, DB_RAW, Net, Progress, download, info, is_hidden, ok, pending, step, warn
 
 MAME_DATS = CACHE + "/dats/mame"
-# core -> DAT file in libretro-database/metadat/mame (full XML with per-ROM CRCs)
-CORE_DATS = {
-    "mame2010": "MAME 2010 XML.xml",
-    "mame2003_plus": "MAME 2003-Plus XML.xml",
+# core -> (cached file name, source URL) of a full listxml with per-ROM CRCs.
+# MAME 2003-Plus uses the XML generated from the core's own source tree: the copy in
+# libretro-database lags behind the compiled core (it lists sets the core no longer has and
+# misses ROMs the core requires, e.g. CPS2 .key files), which put games that cannot start
+# into the playlist.
+CORE_DAT_SOURCES = {
+    "mame2010": ("MAME 2010 XML.xml",
+                 DB_RAW + "/metadat/mame/" + urllib.parse.quote("MAME 2010 XML.xml")),
+    "mame2003_plus": ("mame2003-plus core.xml",
+                      "https://raw.githubusercontent.com/libretro/mame2003-plus-libretro/master/"
+                      "metadata/mame2003-plus.xml"),
 }
+CORE_DATS = {core: name for core, (name, _) in CORE_DAT_SOURCES.items()}
 
 
 def _index(core, update=False):
     """Compact JSON index built once from the big XML:
     set -> [desc, cloneof, romof, is_bios, own, merged]; own/merged = ["romname:crc", ...]."""
     xml_path = os.path.join(MAME_DATS, CORE_DATS[core])
-    idx_path = os.path.join(MAME_DATS, core + ".index.v3.json")
+    idx_path = os.path.join(MAME_DATS, core + ".index.v4.json")
     if Net.online and (update or not os.path.exists(xml_path)):
         try:
             info(f"downloading {CORE_DATS[core]} …")
-            download(f"{DB_RAW}/metadat/mame/{urllib.parse.quote(CORE_DATS[core])}", xml_path, timeout=600)
+            download(CORE_DAT_SOURCES[core][1], xml_path, timeout=600)
             if os.path.exists(idx_path):
                 os.remove(idx_path)
         except Exception as e:  # noqa: BLE001

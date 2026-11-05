@@ -49,7 +49,7 @@ Everything the script needs lives in two places on the external disk:
     ├── installer/             RetroArch_Metal-<version>.dmg (offline install)
     ├── cores/                 *_libretro.dylib.zip + info.zip
     ├── shaders/               shaders_slang.zip + presets/
-    ├── dats/                  libretro-database DATs (CRC identification, MAME XML)
+    ├── dats/                  libretro-database DATs and MAME XML lists (CRC identification)
     ├── thumbnails/
     │   ├── originals/<system>/Named_Snaps/    untouched downloads
     │   ├── normalized/<system>/Named_Snaps/   what RetroArch reads
@@ -328,9 +328,15 @@ be redistributed. It is also used for on-screen notifications.
 ## MAME: which core and why
 
 MAME romsets only work with the MAME version they were made for. The script compares the
-ROM CRCs of every zip against the full XML DAT of each core (from libretro-database). It
-checks the parent and BIOS chain too, and treats alternative BIOS regions as optional, as
-MAME does. Your collection contains two romset generations:
+ROM CRCs of every zip against the full XML list of each core: for mame2010 the one in
+libretro-database, for **mame2003-plus the `metadata/mame2003-plus.xml` generated from the
+core's own source**. The libretro-database copy for mame2003-plus lags behind the compiled
+core: it lists sets the core no longer contains and leaves out ROMs the core requires (CPS2
+`.key` decryption files, for example), so games that cannot start ended up in the playlist.
+Checked on real launches: sets rejected by the core's list fail with "Required files are
+missing" or "Game driver not found", and sets it accepts start. The script checks the parent
+and BIOS chain too, and treats alternative BIOS regions as optional, as MAME does. Your
+collection contains two romset generations:
 
 * sets that match **mame2010** (MAME 0.139). This includes most of the "MAME 0.152"
   collection; no 0.152 core exists for macOS arm64, and the newer cores (mame2015 = 0.160,
