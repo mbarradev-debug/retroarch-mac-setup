@@ -104,23 +104,27 @@ short name such as `n64` works) and run it again.
 
 ### Pairing mode
 
-Use **macOS mode**:
+Use **Switch mode**, the mode every mapping in this project was tested with (the Mac lists
+the pad as **"Pro Controller"**):
 
-1. Hold **START + A** to turn the controller on. LEDs 1-2-3 blink.
+1. Hold **START + Y** to turn the controller on (Switch mode).
 2. Hold the **pair** button for 3 s. The LEDs start rotating.
-3. On the Mac, open *System Settings → Bluetooth* and connect **"Wireless Controller"**.
-4. From then on, pressing **START** reconnects it.
+3. On the Mac, open *System Settings → Bluetooth* and connect **"Pro Controller"**.
+4. From then on, pressing **START** reconnects it. Over a USB-C cable it also works, and it is
+   detected as the same "Pro Controller".
 
-In macOS mode the pad presents itself as a controller that Apple's GameController framework
-supports natively. RetroArch reads it with its `mfi` joypad driver (the default on macOS),
-which exposes every such pad as *"mFi Controller"*. The pad reports each face button by the
-**letter printed on it** (Nintendo layout: A right, B bottom, Y left, X top), while the stock
-RetroArch profile assumes Xbox-style pads where A is the bottom button; with the stock
-profile A and B, and X and Y, come out swapped. The project ships
-`config/autoconfig/mfi/MFi_Controller.cfg`, which maps every printed letter to the RetroPad
-button with the same letter. That is the Super Nintendo layout, so on SNES **B jumps and Y
-runs**, as on the original pad. Avoid the other modes: Switch (START+Y), X-input (START+X)
-and D-input (START+B) report other names, layouts or no Home button.
+Apple's GameController framework supports the Switch Pro Controller natively. RetroArch reads
+it with its `mfi` joypad driver (the default on macOS), which exposes every such pad as
+*"mFi Controller"*. In this mode the pad reports each face button by the **letter printed on
+it** (Nintendo layout: A right, B bottom, Y left, X top); this was checked by logging the
+buttons through the same GameController API RetroArch uses. The stock RetroArch profile
+assumes Xbox-style pads where A is the bottom button, so with it A and B, and X and Y, come out
+swapped. The project ships `config/autoconfig/mfi/MFi_Controller.cfg`, which maps every printed
+letter to the RetroPad button with the same letter. That is the Super Nintendo layout, so on
+SNES **B jumps and Y runs**, as on the original pad.
+
+Avoid the other modes (macOS START+A, X-input START+X, D-input START+B): they report other
+names and may report the buttons by position instead of by letter, which would swap them.
 
 > This profile is for the SN30 Pro (and other 8BitDo pads with Nintendo lettering). An
 > Xbox or PlayStation pad over the same `mfi` driver would get A/B and X/Y swapped.
@@ -343,7 +347,8 @@ PlayStation (SwanStation) needs one of these: `scph5501.bin` (US), `scph5500.bin
    Without internet and without ImageMagick, new thumbnails are normalized with macOS's
    `sips`.
 3. Saves, states and BIOS were already on the disk. Playlists are regenerated.
-4. Pair the controller (START + A, as above) and allow access to removable volumes once.
+4. Pair the controller again in **Switch mode** (START + Y, as above) and allow access to
+   removable volumes once.
 
 With internet, the script also refreshes what is missing, such as snaps for new games and
 cores for new systems. Anything it could not download is listed in `pending.txt` and picked
@@ -367,8 +372,8 @@ script. It proposes the rename, with the same confirmation, and integrates the s
 ## Troubleshooting: the controller does not respond
 
 1. **Mode.** Turn the pad off (hold START until the LEDs go out), then on again with
-   **START + A**. If it was paired in another mode, remove "Wireless Controller" from
-   *Bluetooth* and pair again.
+   **START + Y** (Switch mode). If it was paired in another mode, remove it from *Bluetooth*
+   and pair it again as "Pro Controller".
 2. **macOS sees it.** *System Settings → Game Controllers* (or *Bluetooth*) should list it as
    connected. If it is not listed there, the problem is Bluetooth, not RetroArch.
 3. **Charge.** Low battery causes random disconnects. Charge it over USB-C (it also works wired).
