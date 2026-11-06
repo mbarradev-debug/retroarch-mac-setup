@@ -178,7 +178,8 @@ created by the script. This project's own library is the disk `/Volumes/BACKUP`:
     │   └── index/                             server listings
     ├── tools/python/          portable CPython (works without Command Line Tools)
     ├── reports/<timestamp>/   reports of every run
-    ├── rename-log.tsv         folder rename log (used by undo-rename.sh)
+    ├── romrepair-backup/      original MAME zips, saved before the script completed them
+    ├── rename-log.tsv         log of folder renames and completed zips (used by undo-rename.sh)
     └── manifest.json          what is cached, per system/game, and ROMs known to have no snapshot
 ```
 
@@ -224,7 +225,8 @@ drop a new folder into `roms/` (an ES-DE short name such as `n64` works) and run
    showing the full table and waiting for your confirmation. Only folders are renamed. If the
    target folder already exists, the contents are merged only when no file exists in both;
    otherwise you get a warning and nothing is touched. Every change is logged in
-   `rename-log.tsv`, and `./undo-rename.sh` reverts them. Folders that are not in
+   `rename-log.tsv`, and `./undo-rename.sh` reverts them (and the MAME zips the script
+   completed, see [MAME](#mame-which-core-and-why)). Folders that are not in
    `systems.json` are reported and skipped. `_no_snapshot` and `_*` folders are ignored.
 2. **RetroArch.** Installs the build used by the Homebrew cask **`retroarch-metal`**. Despite
    the name, it is the universal (arm64) build, and it bundles MoltenVK plus the `vulkan`
@@ -538,8 +540,24 @@ full game name from the DAT.
   not shown in the playlist.
 * **Incompatible sets** stay in place and are left out of the playlist. The MAME report lists
   them with the reason (set newer than the core, missing ROM files, missing parent). It also
-  lists the most common blockers: for example, an up-to-date `neogeo.zip` recovers every Neo
-  Geo game that fails only because of `sfix.sfix`.
+  lists the most common blockers: for example, a `neogeo.zip` with the MAME 0.139 BIOS files
+  (`sfix.sfix`, and the newer dumps of `sm1.sm1` and `000-lo.lo`) recovers every Neo Geo game
+  that fails only because of them on mame2010. Keep the old files in it too: the Neo Geo games
+  on mame2003-plus use those, and both cores also find a file by its CRC when the name differs.
+* **Sets completed from other zips.** A collection assembled from several MAME versions has
+  sets whose files sit in another zip than the one the core looks in, because the parent/clone
+  tree changed between versions (`ffightu` needs files that this collection keeps in
+  `ffightua.zip`). When every file a set is missing exists, by CRC, in some other zip of the
+  folder, the script offers to add copies to the set's own zip under the name the core expects
+  (`lib/rasetup/romrepair.py`). It lists them and asks first; it only adds files, never
+  changes or removes any; each zip is backed up to `retroarch-cache/romrepair-backup/` and
+  written through a temporary copy that is verified before it replaces the original; and
+  `./undo-rename.sh` restores the backups. On this collection it can complete 74 sets, 41 of
+  them games with no other playable version (Raiden II, NBA Jam TE, Super Street Fighter II
+  Turbo, Time Crisis, Cyber Sled, Rad Mobile…).
+* **Checked and not worth it:** the rest of the incompatible sets come from other MAME
+  versions, and no other core recovers them. Against the official lists, FBNeo would start
+  none of them, mame2016 17 and the current MAME (0.289) 1.
 * Sets whose files are all present but where some CRC differs are kept, flagged in the report:
   MAME shows a *WRONG CHECKSUMS* warning and the game still starts.
 
@@ -698,7 +716,7 @@ opening the game first thing in a fresh session avoids it.
 | Path | Purpose |
 |---|---|
 | `setup.sh` | Entry point: finds the library (`lib/library.sh`), provides Python, runs `lib/main.py` |
-| `undo-rename.sh` | Reverts the folder renames and merges recorded in `rename-log.tsv` |
+| `undo-rename.sh` | Reverts the folder renames and merges, and restores completed MAME zips, from `rename-log.tsv` |
 | `systems.json` | System map (folder name, ES-DE names, cores, extensions, BIOS, shader…) |
 | `config/retroarch.base.cfg` | Managed `retroarch.cfg` keys (every key checked against RetroArch 1.22.2) |
 | `config/autoconfig/mfi/nintendo.cfg`, `standard.cfg` | Controller profiles (one is installed as `MFi_Controller.cfg`) |

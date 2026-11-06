@@ -1,6 +1,7 @@
 #!/bin/bash
 # Reverts the folder renames/merges done by setup.sh, newest first, using the log in the library.
-# ROM files are only moved back to where they were; nothing is deleted.
+# ROM files are only moved back to where they were, and MAME zips completed by setup.sh are
+# replaced by their backups; nothing else is deleted.
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib/library.sh
@@ -10,7 +11,7 @@ LOG="$CACHE/rename-log.tsv"
 [[ -s "$LOG" ]] || { echo "Nothing to undo ($LOG is empty or missing)."; exit 0; }
 
 echo "Changes recorded in $LOG:"
-awk -F'\t' '$2=="rename"{print "  folder: " $4 "  →  " $3} $2=="merge-file"{m++} END{if(m) print "  plus " m " file(s) merged into existing folders (moved back too)"}' "$LOG"
+awk -F'\t' '$2=="rename"{print "  folder: " $4 "  →  " $3} $2=="merge-file"{m++} $2=="zip-repair"{z++} END{if(m) print "  plus " m " file(s) merged into existing folders (moved back too)"; if(z) print "  plus " z " MAME zip(s) completed with files from other zips (original zips restored)"}' "$LOG"
 read -r -p "Revert them? [s/N] " ans
 [[ "$ans" =~ ^[sSyY] ]] || { echo "Cancelled."; exit 0; }
 
@@ -23,6 +24,10 @@ tail -r "$LOG" | while IFS=$'\t' read -r ts action src dst; do
       if [[ -e "$src" ]]; then echo "  skip (already exists): $src"; errors=$((errors+1)); continue; fi
       mkdir -p "$(dirname "$src")"
       mv "$dst" "$src" && echo "  ✔ $dst → $src"
+      ;;
+    zip-repair)   # src = backup of the original zip, dst = the completed zip
+      if [[ ! -e "$src" ]]; then echo "  skip (backup missing): $src"; continue; fi
+      mv -f "$src" "$dst" && echo "  ✔ restored $dst"
       ;;
   esac
 done

@@ -8,7 +8,8 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from rasetup import bios, configure, content, folders, install, mame, playlists, remaps, thumbs  # noqa: E402
+from rasetup import (bios, configure, content, folders, install, mame, playlists, remaps,  # noqa: E402
+                     romrepair, thumbs)
 from rasetup.common import (CACHE, NO_SNAPSHOT, PENDING, RA_PLAYLISTS, ROMS, Manifest, Net,  # noqa: E402
                             confirm, ensure_dir, err, info, load_systems, now_iso, ok, step,
                             table, warn)
@@ -195,8 +196,10 @@ def main():
         s = systems[sysname]
         step(f"{sysname}")
         if s["type"] == "arcade" and any(c in mame.CORE_DATS for c in s["cores"]):
-            games, bios_sets, incompatible = mame.analyze(folder, [c for c in s["cores"] if c in cores],
-                                                          manifest, args.update)
+            mcores = [c for c in s["cores"] if c in cores]
+            games, bios_sets, incompatible = mame.analyze(folder, mcores, manifest, args.update)
+            if incompatible and romrepair.repair(folder, mcores, manifest, incompatible):
+                games, bios_sets, incompatible = mame.analyze(folder, mcores, manifest)
             items = [{"rel": g["rel"], "label": g["label"], "extra": g["alt_names"], "core": g["core"],
                       "set": g["set"], "parent": g["parent"]} for g in games]
             unique_labels(items)
