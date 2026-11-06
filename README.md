@@ -80,6 +80,7 @@ short name such as `n64` works) and run it again.
 | `--offline` | Never touches the network |
 | `--canvas 1280x960` | Changes the thumbnail canvas. Everything is rebuilt from `originals/` with no downloads |
 | `--renormalize` | Rebuilds every normalized thumbnail from `originals/` |
+| `--check-paths` | Only checks that saves, states, screenshots and BIOS in `retroarch.cfg` point to the disk, and puts them back if not (see [Troubleshooting](#troubleshooting-buttons-or-saves-suddenly-wrong)). Takes a second |
 
 ## What the script does, in order
 
@@ -99,7 +100,9 @@ short name such as `n64` works) and run it again.
    RetroArch uses for override folders.
 4. **Configuration.** Merges `config/retroarch.base.cfg` into
    `~/Library/Application Support/RetroArch/config/retroarch.cfg`; your other settings are
-   kept. It also writes per-core overrides and options, a 4:3 override and a shader preset per
+   kept. Before that it checks that saves, states, screenshots and BIOS still point to the
+   disk, and rescues anything RetroArch saved elsewhere meanwhile (see
+   [Troubleshooting](#troubleshooting-buttons-or-saves-suddenly-wrong)). It also writes per-core overrides and options, a 4:3 override and a shader preset per
    system folder. RetroArch never changes the screen resolution or scaling of the desktop.
 5. **BIOS.** Checks the BIOS files with MD5 hashes taken from libretro's `System.dat` and
    the core `.info` files. It tells you which ones are missing and where they go. Nothing is
@@ -426,6 +429,34 @@ script. It proposes the rename, with the same confirmation, and integrates the s
    `./setup.sh` again restores the managed keys.
 9. **Firmware.** Old firmware has Bluetooth bugs. Update it with *8BitDo Ultimate Software*
    (Mac/Windows) from support.8bitdo.com.
+
+## Troubleshooting: buttons or saves suddenly wrong
+
+Symptoms: MAME games no longer follow the button layouts (Tumble Pop does not fire with Y or
+jump with B, CPS games have the punches in the wrong places), saves or states are missing, or
+`~/Documents/RetroArch` has appeared.
+
+Cause: RetroArch was opened while `/Volumes/BACKUP` was not mounted yet, or before macOS gave
+it access to removable volumes. When a configured directory does not exist, RetroArch falls
+back to its default (`~/Documents/RetroArch/saves`, `.../states`, screenshots `default`), and
+because it saves `retroarch.cfg` when it quits, the fallback stays. From then on saves and
+states go to the Mac, and the MAME cores read their button layouts (`cfg/default.cfg`,
+`cfg/<set>.cfg`, which live in the save directory) from an empty folder, so every MAME game
+gets MAME's factory buttons. The controller profile and the remaps are not involved.
+
+Fix: quit RetroArch and run
+
+```bash
+./setup.sh --check-paths
+```
+
+It lists the directories that point off the disk, copies to the disk every file saved in the
+fallback folders meanwhile (it never overwrites a file on the disk; one that differs is listed
+and left where it is, for you to choose) and writes the disk paths back. A normal `./setup.sh`
+run does the same check. Afterwards `~/Documents/RetroArch` is no longer used and can be
+deleted.
+
+To avoid it, connect the disk and wait for it to appear in Finder before opening RetroArch.
 
 ## Troubleshooting: RetroArch quits when a MAME game starts
 

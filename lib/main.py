@@ -22,6 +22,8 @@ def parse_args():
                    help="re-download RetroArch, cores, shaders and DATs even if cached")
     p.add_argument("--offline", action="store_true", help="never use the network")
     p.add_argument("--canvas", default=None, help="thumbnail canvas WxH (default 960x720, 4:3)")
+    p.add_argument("--check-paths", action="store_true",
+                   help="only check that retroarch.cfg saves/states/BIOS point to the disk, and fix them")
     p.add_argument("--renormalize", action="store_true", help="rebuild normalized thumbnails from originals")
     return p.parse_args()
 
@@ -126,6 +128,9 @@ def restore_found(systems, present, manifest, tool, canvas):
 # ---------------------------------------------------------------- main
 def main():
     args = parse_args()
+    if args.check_paths:
+        configure.check_paths()
+        return 0
     ts = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     report_dir = ensure_dir(os.path.join(CACHE, "reports", ts))
     for d in ("thumbnails/originals", "thumbnails/normalized", "cores", "shaders", "installer", "dats"):

@@ -4,6 +4,7 @@ import os
 import re
 import shutil
 
+from . import diskpaths
 from .common import (BIOS_DIR, CACHE, PROJECT, RA_AUTOCONFIG, RA_CFG, RA_CONFIG_DIR, RA_HOME,
                      RA_PLAYLISTS, RA_PROJECT_ASSETS, RA_SHADERS, SAVES_DIR, ensure_dir, info, ok,
                      run, step, warn)
@@ -75,11 +76,34 @@ def retroarch_running():
     return run(["pgrep", "-x", "RetroArch"], check=False).returncode == 0
 
 
-def configure(systems, present, cores, manifest):
-    step("Configuring RetroArch")
+def _require_closed():
     if retroarch_running():
         warn("RetroArch is running. It rewrites retroarch.cfg when it quits, which would undo these changes.")
         raise RuntimeError("Quit RetroArch (Hotkey+X twice, or Cmd+Q) and run the script again")
+
+
+def _font_path():
+    return os.path.join(RA_PROJECT_ASSETS, "PixelifySans-Regular.ttf")
+
+
+def base_values():
+    subs = {"RA_HOME": RA_HOME, "CACHE": CACHE, "BIOS": BIOS_DIR, "SAVES": SAVES_DIR, "FONT": _font_path()}
+    return read_template(os.path.join(PROJECT, "config/retroarch.base.cfg"), subs)
+
+
+def check_paths():
+    """--check-paths: only put the disk directories back in retroarch.cfg (rescuing files)."""
+    step("Checking retroarch.cfg directories")
+    _require_closed()
+    values = base_values()
+    if diskpaths.check(values):
+        merge_cfg(RA_CFG, {k: values[k] for k, _, _ in diskpaths.wrong_paths(values)})
+        ok("directories restored in retroarch.cfg")
+
+
+def configure(systems, present, cores, manifest):
+    step("Configuring RetroArch")
+    _require_closed()
 
     for d in (BIOS_DIR, SAVES_DIR + "/saves", SAVES_DIR + "/states", SAVES_DIR + "/screenshots",
               RA_PLAYLISTS, RA_AUTOCONFIG + "/mfi", RA_PROJECT_ASSETS):
@@ -87,11 +111,10 @@ def configure(systems, present, cores, manifest):
 
     # font
     font_src = os.path.join(PROJECT, "fonts/PixelifySans-Regular.ttf")
-    font = os.path.join(RA_PROJECT_ASSETS, "PixelifySans-Regular.ttf")
-    shutil.copy2(font_src, font)
+    shutil.copy2(font_src, _font_path())
 
-    subs = {"RA_HOME": RA_HOME, "CACHE": CACHE, "BIOS": BIOS_DIR, "SAVES": SAVES_DIR, "FONT": font}
-    values = read_template(os.path.join(PROJECT, "config/retroarch.base.cfg"), subs)
+    values = base_values()
+    diskpaths.check(values)          # before merge_cfg: rescues files saved off the disk
     merge_cfg(RA_CFG, values)
     ok(f"retroarch.cfg: {len(values)} managed keys → {RA_CFG}")
 
