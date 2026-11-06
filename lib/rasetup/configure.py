@@ -4,7 +4,7 @@ import os
 import re
 import shutil
 
-from . import diskpaths
+from . import controller, diskpaths
 from .common import (BIOS_DIR, CACHE, PROJECT, RA_AUTOCONFIG, RA_CFG, RA_CONFIG_DIR, RA_HOME,
                      RA_PLAYLISTS, RA_PROJECT_ASSETS, RA_SHADERS, SAVES_DIR, ensure_dir, info, ok,
                      run, step, warn)
@@ -101,7 +101,7 @@ def check_paths():
         ok("directories restored in retroarch.cfg")
 
 
-def configure(systems, present, cores, manifest):
+def configure(systems, present, cores, manifest, controller_option=None):
     step("Configuring RetroArch")
     _require_closed()
 
@@ -118,10 +118,8 @@ def configure(systems, present, cores, manifest):
     merge_cfg(RA_CFG, values)
     ok(f"retroarch.cfg: {len(values)} managed keys → {RA_CFG}")
 
-    # controller profile (replaces the stock mfi profile, same mapping + SN30 Pro labels)
-    shutil.copy2(os.path.join(PROJECT, "config/autoconfig/mfi/MFi_Controller.cfg"),
-                 os.path.join(RA_AUTOCONFIG, "mfi/MFi_Controller.cfg"))
-    ok("controller autoconfig installed (mfi/MFi_Controller.cfg)")
+    # controller profile: one for every pad (mfi driver), chosen from the pads macOS knows
+    controller.install(controller_option, manifest)
 
     # per-core overrides, options and per-folder shader presets
     for sysname in present:

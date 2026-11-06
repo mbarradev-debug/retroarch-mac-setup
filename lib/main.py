@@ -22,6 +22,9 @@ def parse_args():
                    help="re-download RetroArch, cores, shaders and DATs even if cached")
     p.add_argument("--offline", action="store_true", help="never use the network")
     p.add_argument("--canvas", default=None, help="thumbnail canvas WxH (default 960x720, 4:3)")
+    p.add_argument("--controller", choices=["auto", "nintendo", "standard"], default=None,
+                   help="controller profile: nintendo (Switch Pro / 8BitDo in Switch mode), standard "
+                        "(Xbox, PlayStation, others); auto = detect (default, remembered)")
     p.add_argument("--check-paths", action="store_true",
                    help="only check that retroarch.cfg saves/states/BIOS point to the disk, and fix them")
     p.add_argument("--renormalize", action="store_true", help="rebuild normalized thumbnails from originals")
@@ -167,7 +170,7 @@ def main():
 
     # 3. configuration
     if ra:
-        configure.configure(systems, present, cores, manifest)
+        configure.configure(systems, present, cores, manifest, args.controller)
     else:
         warn("RetroArch not available — configuration skipped this run")
 

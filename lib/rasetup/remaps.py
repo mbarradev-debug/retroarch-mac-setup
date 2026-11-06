@@ -1,6 +1,8 @@
 """Button layouts for MAME games, assigned inside MAME (not with RetroArch button remaps).
 
-Physical button = RetroPad button with the same letter (see the SN30 Pro autoconfig profile).
+Buttons below are RetroPad (SNES) letters, i.e. positions: Y left, B bottom, X top, A right. On the
+SN30 Pro they match the printed letters; on Xbox/PlayStation pads they go by position
+(see lib/rasetup/controller.py and config/autoconfig/mfi/).
 
 Why not RetroArch button remaps: with RetroArch 1.22.2 and the MAME cores, every layout that
 redirected face buttons through RetroArch remap files (ours, or ones set by hand in Quick Menu

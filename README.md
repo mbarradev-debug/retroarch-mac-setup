@@ -2,7 +2,8 @@
 
 One idempotent script that installs and configures **RetroArch on an Apple Silicon Mac**
 (built and tested on a MacBook Air M4, macOS Tahoe 26), driven 100 % by an
-**8BitDo SN30 Pro** over Bluetooth: no mouse, no keyboard.
+game controller: no mouse, no keyboard. Built around an **8BitDo SN30 Pro**; Xbox, PlayStation
+and Switch Pro controllers are detected and get the right profile too.
 
 ![Street Fighter II with the arcade CRT preset on a MacBook Air M4](docs/images/hero-arcade-sf2.jpg)
 
@@ -80,6 +81,7 @@ short name such as `n64` works) and run it again.
 | `--offline` | Never touches the network |
 | `--canvas 1280x960` | Changes the thumbnail canvas. Everything is rebuilt from `originals/` with no downloads |
 | `--renormalize` | Rebuilds every normalized thumbnail from `originals/` |
+| `--controller nintendo\|standard\|auto` | Forces the controller profile (see [Other controllers](#other-controllers)); it is remembered. `auto` goes back to detecting it |
 | `--check-paths` | Only checks that saves, states, screenshots and BIOS in `retroarch.cfg` point to the disk, and puts them back if not (see [Troubleshooting](#troubleshooting-buttons-or-saves-suddenly-wrong)). Takes a second |
 
 ## What the script does, in order
@@ -127,9 +129,24 @@ short name such as `n64` works) and run it again.
 9. **Reports.** Written to `retroarch-cache/reports/<timestamp>/`: summary, MAME, BIOS,
    no-snapshot, unknown folders and anything still pending download.
 
-## Controller: 8BitDo SN30 Pro
+## Controller
 
-### Pairing mode
+The script looks at the game controllers macOS knows (paired over Bluetooth, even if switched
+off, or plugged in over USB) and installs one of two profiles as
+`autoconfig/mfi/MFi_Controller.cfg`:
+
+| Profile | For | Detected by |
+|---|---|---|
+| `nintendo` | 8BitDo SN30 Pro in Switch mode, Switch Pro Controller, other Nintendo-lettered pads | Nintendo vendor ID (0x057E) |
+| `standard` | Xbox, PlayStation and every other pad (RetroArch's stock profile) | anything else |
+
+Only one profile can be active, because RetroArch's `mfi` driver (the default on macOS)
+presents every pad as *"mFi Controller"*, with no vendor or product ID. A connected pad wins
+over one that is only paired; if pads of both kinds are connected, the script asks. The choice
+is remembered, so running the script with the pad switched off keeps it. Pair the controller
+**before** the first `./setup.sh`; otherwise it picks `standard` and says so.
+
+### 8BitDo SN30 Pro: pairing mode
 
 Use **Switch mode**, the mode every mapping in this project was tested with (the Mac lists
 the pad as **"Pro Controller"**):
@@ -146,19 +163,40 @@ it with its `mfi` joypad driver (the default on macOS), which exposes every such
 it** (Nintendo layout: A right, B bottom, Y left, X top); this was checked by logging the
 buttons through the same GameController API RetroArch uses. The stock RetroArch profile
 assumes Xbox-style pads where A is the bottom button, so with it A and B, and X and Y, come out
-swapped. The project ships `config/autoconfig/mfi/MFi_Controller.cfg`, which maps every printed
+swapped. The project's `nintendo` profile (`config/autoconfig/mfi/nintendo.cfg`) maps every printed
 letter to the RetroPad button with the same letter. That is the Super Nintendo layout, so on
 SNES **B jumps and Y runs**, as on the original pad.
 
 Avoid the other modes (macOS START+A, X-input START+X, D-input START+B): they report other
 names and may report the buttons by position instead of by letter, which would swap them.
 
-> This profile is for the SN30 Pro (and other 8BitDo pads with Nintendo lettering). An
-> Xbox or PlayStation pad over the same `mfi` driver would get A/B and X/Y swapped.
+### Other controllers
+
+Xbox and PlayStation pads need no special mode: pair them in *System Settings → Bluetooth*
+(Xbox: hold the pair button on top; PlayStation: hold **Create/Share + PS**) and run
+`./setup.sh`. With the `standard` profile every button sends the RetroPad button **in the same
+position**, so games play exactly as on the SN30 Pro. In the tables below, read the SNES
+letters as positions:
+
+| Below | Position | Xbox | PlayStation |
+|---|---|---|---|
+| **B** | bottom | A | Cross |
+| **A** | right | B | Circle |
+| **Y** | left | X | Square |
+| **X** | top | Y | Triangle |
+
+Hotkeys are the exception: they follow the label macOS gives the button, so on an Xbox pad
+"L2 + A" is the button printed **A** (bottom), and on PlayStation A = Cross, B = Circle,
+X = Square, Y = Triangle.
+
+If the detection gets it wrong (A and B swapped in the menu and in games), force the profile
+with `./setup.sh --controller standard` or `--controller nintendo`; `--controller auto`
+returns to detection.
 
 ### Button map
 
-Every button sends the RetroPad button with the same letter (SNES layout). L3/R3 = pressing the sticks.
+Letters are the SN30 Pro's (SNES layout); on Xbox/PlayStation read them as positions, see
+[Other controllers](#other-controllers). L3/R3 = pressing the sticks.
 **L2 is the hotkey button**: hold it, then press the second button.
 
 | In menus | Button |
@@ -415,7 +453,9 @@ script. It proposes the rename, with the same confirmation, and integrates the s
    You can check both with the keyboard arrows and Enter if needed.
 5. **Profile.** `~/Library/Application Support/RetroArch/autoconfig/mfi/MFi_Controller.cfg`
    must exist (run `./setup.sh` again to restore it), and `input_autodetect_enable = "true"`
-   must be in `retroarch.cfg`.
+   must be in `retroarch.cfg`. If A/B and X/Y are swapped, the wrong profile is installed:
+   run `./setup.sh --controller standard` (Xbox, PlayStation) or `--controller nintendo`
+   (SN30 Pro in Switch mode, Switch Pro).
 6. **Hotkeys do nothing.** Hold **L2 first**, then press the other button.
    `input_enable_hotkey_btn = "12"` (L2) must be in `retroarch.cfg`.
 7. **A button does nothing / does the wrong thing.** *Settings → Input → RetroPad Binds →
@@ -479,7 +519,7 @@ opening the game first thing in a fresh session avoids it.
 | `undo-rename.sh` | Reverts the folder renames and merges recorded in `rename-log.tsv` |
 | `systems.json` | System map (folder name, ES-DE names, cores, extensions, BIOS, shader…) |
 | `config/retroarch.base.cfg` | Managed `retroarch.cfg` keys (every key checked against RetroArch 1.22.2) |
-| `config/autoconfig/mfi/MFi_Controller.cfg` | Controller profile |
+| `config/autoconfig/mfi/nintendo.cfg`, `standard.cfg` | Controller profiles (one is installed as `MFi_Controller.cfg`) |
 | `config/shaders/*.slangp` | Shader presets |
 | `fonts/` | Pixelify Sans + licence |
 | `lib/rasetup/` | Implementation (Python standard library only) |
