@@ -1,0 +1,2 @@
+# core patches must keep the CRLF line endings of the files they change
+patches/** -text

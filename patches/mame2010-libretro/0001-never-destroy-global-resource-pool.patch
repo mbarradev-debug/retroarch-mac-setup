@@ -1,0 +1,15 @@
+diff --git a/src/emu/emualloc.c b/src/emu/emualloc.c
+index c34a534..ed1d376 100644
+--- a/src/emu/emualloc.c
++++ b/src/emu/emualloc.c
+@@ -104,7 +104,9 @@ private:
+ //**************************************************************************
+ 
+ // global resource pool to handle allocations outside of the emulator context
+-resource_pool global_resource_pool;
++// never destroyed: its destructor ran in exit()/dlclose() and freed machine_config objects
++// that were no longer valid (RetroArch crashed on quit on macOS)
++[[clang::no_destroy]] resource_pool global_resource_pool;
+ 
+ // dummy zeromem object
+ const zeromem_t zeromem = { };

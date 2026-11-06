@@ -10,6 +10,7 @@ import sys
 import tempfile
 import zipfile
 
+from . import corebuild
 from .common import (APP, BUILDBOT_ASSETS, BUILDBOT_CORES, CACHE, Net, PROJECT, RA_CORES, RA_HOME,
                      RA_INFO, RA_SHADERS, confirm, download, ensure_dir, err, file_sha256, http_get, info,
                      now_iso, ok, pending, run, step, warn, which)
@@ -199,16 +200,23 @@ def ensure_cores(cores, manifest, update=False):
                 info(f"downloaded {zname}")
             except Exception as e:  # noqa: BLE001
                 warn(f"{core}: download failed ({e})")
-        if not os.path.exists(zpath):
-            pending("cores", core, "not cached; needs internet")
-            continue
         dylib = os.path.join(RA_CORES, f"{core}_libretro.dylib")
-        sha = file_sha256(zpath)
         rec = manifest["cores"].get(core, {})
-        if not os.path.exists(dylib) or rec.get("zip_sha256") != sha:
-            with zipfile.ZipFile(zpath) as z:
-                z.extract(f"{core}_libretro.dylib", RA_CORES)
-            rec = {"zip_sha256": sha}
+        fixed = corebuild.ensure(core, manifest)      # built from source with a fix, if any
+        if fixed:
+            source = "patched:" + os.path.basename(fixed)
+            if not os.path.exists(dylib) or rec.get("source") != source:
+                shutil.copy2(fixed, dylib)
+                rec = {"source": source}
+        else:
+            if not os.path.exists(zpath):
+                pending("cores", core, "not cached; needs internet")
+                continue
+            sha = file_sha256(zpath)
+            if not os.path.exists(dylib) or rec.get("zip_sha256") != sha or rec.get("source"):
+                with zipfile.ZipFile(zpath) as z:
+                    z.extract(f"{core}_libretro.dylib", RA_CORES)
+                rec = {"zip_sha256": sha}
         if not rec.get("library_name"):
             sysinfo = _core_library_name(dylib)
             if sysinfo:
@@ -219,7 +227,7 @@ def ensure_cores(cores, manifest, update=False):
         rec["display_name"] = read_info(core).get("display_name", core)
         manifest["cores"][core] = rec
         installed[core] = rec
-        ok(f"{core:18} → {rec['library_name']}")
+        ok(f"{core:18} → {rec['library_name']}" + ("  (fixed build)" if rec.get("source") else ""))
     manifest.save()
     return installed
 

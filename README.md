@@ -56,7 +56,7 @@ created by the script. This project's own library is the disk `/Volumes/BACKUP`:
 │   └── autoconfig/mfi/        the controller profile
 └── retroarch-cache/
     ├── installer/             RetroArch_Metal-<version>.dmg (offline install)
-    ├── cores/                 *_libretro.dylib.zip + info.zip
+    ├── cores/                 *_libretro.dylib.zip + info.zip, mame2010_libretro.patched-*.dylib (fixed build)
     ├── shaders/               shaders_slang.zip + presets/
     ├── dats/                  libretro-database DATs and MAME XML lists (CRC identification)
     ├── thumbnails/
@@ -120,7 +120,9 @@ drop a new folder into `roms/` (an ES-DE short name such as `n64` works) and run
    the cask. The script also checks that the installed app contains the Vulkan driver.
 3. **Cores, info files and shaders.** Downloaded from the libretro buildbot for
    `apple/osx/arm64` and cached. Each core is asked its `library_name`, which is the name
-   RetroArch uses for override folders.
+   RetroArch uses for override folders. **MAME 2010** is the exception: it is compiled from its
+   source with a fix (see [Troubleshooting](#troubleshooting-retroarch-quit-unexpectedly-after-cmdq)),
+   once, and the result is cached.
 4. **Configuration.** RetroArch's configuration lives in the library, in `retroarch-config/`
    (see [Library layout](#library-layout)): `~/Library/Application Support/RetroArch/config/retroarch.cfg`
    becomes a link to `retroarch-config/retroarch.cfg`, and the override, remap and controller
@@ -442,7 +444,7 @@ PlayStation (SwanStation) needs one of these: `scph5501.bin` (US), `scph5500.bin
    **No internet needed.** From the cache in the library it uses:
    * a portable Python, so no Command Line Tools are needed;
    * the cached RetroArch DMG, installed with `hdiutil` and `ditto`;
-   * the cached cores, shaders and DATs;
+   * the cached cores (the fixed MAME 2010 build included), shaders and DATs;
    * the normalized thumbnails, which are read in place.
 
    Without internet and without ImageMagick, new thumbnails are normalized with macOS's
@@ -543,9 +545,19 @@ Seen with RetroArch 1.22.2 after playing a game on MAME 2010. The crash report
 (`~/Library/Logs/DiagnosticReports/RetroArch-*.ips`) shows `EXC_BAD_ACCESS` in
 `machine_config::~machine_config()` under `resource_pool::~resource_pool()`, inside `exit()`:
 the MAME 2010 core's global memory pool is destroyed while the process ends, and it frees
-objects that are no longer valid. It is a bug in the core, not in this configuration.
+objects that are no longer valid. It is a bug in the core, not in this configuration; it also
+crashed RetroArch once when the core was unloaded (`dlclose`).
 
-**Cmd+Q does not close the game.** RetroArch answers macOS's quit request by saving its
+**Fixed by building the core.** `patches/mame2010-libretro/` marks that pool
+`[[clang::no_destroy]]`, so it is never destroyed (the system reclaims its memory when the
+process ends). The script fetches mame2010-libretro at a pinned commit, applies the patch,
+compiles it (about 2 minutes on an M4) and keeps the result in
+`retroarch-cache/cores/mame2010_libretro.patched-<commit>-<patch>.dylib`, which every later run,
+and a restore after a reformat, installs offline. Compiling needs the **Command Line Tools**
+(`xcode-select --install`) and internet, once; without them the script says so and uses the
+buildbot core, which still crashes on Cmd+Q. `lib/rasetup/corebuild.py` documents the details.
+
+**Even with the fix, Cmd+Q does not close the game.** RetroArch answers macOS's quit request by saving its
 configuration and letting macOS end the process at once (`applicationShouldTerminate` in
 `ui/drivers/ui_cocoa.m`), so the core never gets to unload the game. Battery saves are safe up
 to the last 10 seconds (`autosave_interval`), but anything a core writes only when the game
@@ -579,6 +591,7 @@ opening the game first thing in a fresh session avoids it.
 | `config/autoconfig/mfi/nintendo.cfg`, `standard.cfg` | Controller profiles (one is installed as `MFi_Controller.cfg`) |
 | `config/shaders/*.slangp` | Shader presets |
 | `fonts/` | Pixelify Sans + licence |
+| `patches/` | Source fixes for cores built by the script (`lib/rasetup/corebuild.py`) |
 | `lib/rasetup/` | Implementation (Python standard library only) |
 
 ## Licences
