@@ -1,7 +1,7 @@
 # retroarch-mac-setup
 
 One idempotent script that installs and configures **RetroArch on an Apple Silicon Mac**
-(built and tested on a MacBook Air M4, macOS Tahoe 26), driven 100 % by an
+(built and tested on a MacBook Air M4, macOS Tahoe 26), driven 100 % by a
 game controller: no mouse, no keyboard. Built around an **8BitDo SN30 Pro**; Xbox, PlayStation
 and Switch Pro controllers are detected and get the right profile too.
 
@@ -15,6 +15,8 @@ and Switch Pro controllers are detected and get the right profile too.
 * Pixel-art menu font (Pixelify Sans, SIL OFL 1.1).
 * **Gameplay snapshots only** (libretro-thumbnails `Named_Snaps`), normalized to one canvas size.
 * Everything lives in one **library folder** you choose (an external disk or any folder): games, BIOS, saves and a permanent cache, so after a reformat it works **offline**.
+
+New to RetroArch? Start with [Getting started](#getting-started).
 
 ## What it looks like
 
@@ -35,6 +37,117 @@ the phosphor structure is visible on GitHub.
 
 Both looks were chosen by comparing four candidates on the same frames, on this panel; see
 [Shaders](#shaders-one-preset-per-system) for the details.
+
+## Getting started
+
+For someone who has never used RetroArch. The rest of this README explains every detail; this
+is the short path from nothing to playing.
+
+### What RetroArch is
+
+RetroArch is one app that plays games from many old consoles and arcade machines. It does not
+emulate anything by itself: each system is emulated by a **core**, a plug-in that RetroArch
+loads (bsnes for the Super Nintendo, Genesis Plus GX for the Mega Drive, MAME for arcade
+games…). This script installs RetroArch, picks and installs one core per system, and sets up
+everything else, so you never have to choose a core or touch a setting.
+
+### What you need
+
+* A Mac with Apple Silicon (M1 or later).
+* A **library**: an external disk (recommended: it survives reformatting the Mac) or any folder.
+* **Your games** as files (ROMs and disc images), dumped from cartridges and discs you own.
+  Nothing is downloaded for you, and this repository contains no games.
+* A **controller**: an 8BitDo SN30 Pro, a Switch Pro Controller, or an Xbox or PlayStation
+  controller. Pair it with the Mac before the first run ([Controller](#controller)).
+* **Internet** for the first run (RetroArch, cores, shaders and game pictures are downloaded
+  and cached in the library). The **Command Line Tools** (`xcode-select --install`) are
+  optional: with them the script builds a fixed MAME 2010 core, see
+  [this note](#troubleshooting-retroarch-quit-unexpectedly-after-cmdq).
+* **BIOS** files, only for a few systems (see the table below).
+
+### 1. Put your games in folders
+
+In the library, create a folder called `roms`, and inside it one folder per system. Short
+names are fine; the script offers to rename them to the official libretro names (it asks
+first, and `./undo-rename.sh` reverts it).
+
+```
+/Volumes/MyDisk/            ← the library
+└── roms/
+    ├── snes/               Super Mario World (USA).sfc …
+    ├── megadrive/          Sonic The Hedgehog (USA, Europe).md …
+    ├── psx/                Crash Bandicoot (USA).cue + Crash Bandicoot (USA).bin …
+    └── mame/               sf2.zip, tumblep.zip …
+```
+
+| System | Folder name | Game files | BIOS |
+|---|---|---|---|
+| NES / Famicom | `nes` | `.nes`, `.zip` | – |
+| Super Nintendo | `snes` | `.sfc`, `.smc`, `.zip` | – |
+| Nintendo 64 | `n64` | `.z64`, `.n64`, `.v64`, `.zip` | – |
+| Game Boy / Color / Advance | `gb`, `gbc`, `gba` | `.gb`, `.gbc`, `.gba`, `.zip` | optional |
+| Master System | `mastersystem` | `.sms`, `.zip` | optional |
+| Mega Drive / Genesis | `megadrive` or `genesis` | `.md`, `.gen`, `.bin`, `.zip` | – |
+| Mega-CD / Sega CD | `segacd` | `.chd`, `.cue` + `.bin`, `.m3u` | **required** |
+| Saturn | `saturn` | `.chd`, `.cue` + `.bin`, `.m3u` | **required** |
+| PlayStation | `psx` | `.chd`, `.cue` + `.bin`, `.pbp`, `.m3u` | **required** |
+| PC Engine / TurboGrafx-16 | `pcengine` | `.pce`, `.zip` | – |
+| PC Engine CD / TurboGrafx-CD | `pcenginecd` | `.chd`, `.cue` + `.bin`, `.m3u` | **required** |
+| Atari 2600 | `atari2600` | `.a26`, `.bin`, `.zip` | – |
+| Arcade (MAME) | `mame` or `arcade` | `.zip`, **as they are** | – |
+| Neo Geo | `neogeo` | `.zip`, plus `neogeo.zip` in the same folder | – |
+
+Every system the script knows, with all its accepted folder names, is in `systems.json`.
+
+* **Disc games** (PlayStation, Saturn, Mega-CD): keep each `.cue` next to its `.bin` files,
+  or use a single `.chd`. For games on several discs, a `.m3u` text file listing the discs
+  (one file name per line) lets you swap discs from the menu.
+* **Arcade games**: never unzip them or rename the zip. MAME is picky about versions: the
+  script checks every zip against the MAME 2010 and MAME 2003-Plus lists, sends each game to
+  the core it works with, and lists the ones that match neither in the MAME report.
+* **BIOS** files go in `<library>/bios/` with the exact file name; the script checks them and
+  tells you which are missing ([BIOS](#bios)).
+
+### 2. Run the script
+
+```bash
+git clone https://github.com/mbarradev-debug/retroarch-mac-setup.git
+cd retroarch-mac-setup
+./setup.sh
+```
+
+The first time it asks where the library is (type the path, or drag the folder into the
+Terminal window), proposes the folder renames (answer `s`), and then works on its own. The
+first run takes a while, mostly downloading game pictures; later runs are quick. It ends with a
+summary and a folder of reports (missing BIOS, games with no picture, the MAME report).
+
+### 3. Play
+
+1. Open RetroArch (`open -a RetroArch`, or from Launchpad). If the library is on an external
+   disk, macOS asks once whether RetroArch may access removable volumes: click **Allow** with
+   the mouse.
+2. Each system is a list on the left of the menu. Pick one with the D-pad, then a game, and
+   press **A** twice (open the game's entry, then *Run*).
+3. In a game, the buttons work as on the original console. Everything else is **L2 + a
+   button** (hold L2 first):
+
+| To… | Press |
+|---|---|
+| Open the menu (and close it again) | L2 + Start |
+| Save your place (save state) / go back to it | L2 + R / L2 + L |
+| Leave the game, back to the list | L2 + Select |
+| Quit RetroArch | L2 + X, twice |
+
+Letters are the SN30 Pro's; on Xbox and PlayStation pads they mean positions (B = bottom,
+A = right, Y = left, X = top), see [Other controllers](#other-controllers). Quit with
+L2 + X rather than **Cmd+Q**: Cmd+Q closes RetroArch without closing the game first, and
+arcade high scores are not saved. The full list of shortcuts is in [Button map](#button-map).
+
+### If something goes wrong
+
+Run `./setup.sh` again: it is safe to repeat and puts every setting back. Then look at the
+reports it prints, and at the troubleshooting sections at the end of this README (the
+controller, buttons or saves that suddenly look wrong, crashes).
 
 ## Library layout
 
