@@ -14,13 +14,14 @@ import urllib.parse
 import urllib.request
 
 # ---------------------------------------------------------------- fixed paths
-VOLUME = "/Volumes/BACKUP"
-ROMS = VOLUME + "/roms"
+# game library, chosen by setup.sh (lib/library.sh) and passed in the environment
+LIBRARY = os.environ.get("RASETUP_LIBRARY") or "/Volumes/BACKUP"
+ROMS = os.environ.get("RASETUP_ROMS") or LIBRARY + "/roms"
 NO_SNAPSHOT_DIRNAME = "_no_snapshot"
 NO_SNAPSHOT = ROMS + "/" + NO_SNAPSHOT_DIRNAME
-CACHE = VOLUME + "/retroarch-cache"
-BIOS_DIR = VOLUME + "/bios"
-SAVES_DIR = VOLUME + "/retroarch-saves"
+CACHE = LIBRARY + "/retroarch-cache"
+BIOS_DIR = LIBRARY + "/bios"
+SAVES_DIR = LIBRARY + "/retroarch-saves"
 
 RA_HOME = os.path.expanduser("~/Library/Application Support/RetroArch")
 RA_CONFIG_DIR = RA_HOME + "/config"

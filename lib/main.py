@@ -26,7 +26,12 @@ def parse_args():
                    help="controller profile: nintendo (Switch Pro / 8BitDo in Switch mode), standard "
                         "(Xbox, PlayStation, others); auto = detect (default, remembered)")
     p.add_argument("--check-paths", action="store_true",
-                   help="only check that retroarch.cfg saves/states/BIOS point to the disk, and fix them")
+                   help="only check that retroarch.cfg saves/states/BIOS point to the library, and fix them")
+    # read by setup.sh (lib/library.sh) before Python starts; listed here for --help
+    p.add_argument("--library", metavar="PATH",
+                   help="game library: the folder holding roms/ (bios/, saves and cache go next to "
+                        "it); remembered")
+    p.add_argument("--roms", metavar="PATH", help="ROM folder, if it is not <library>/roms; remembered")
     p.add_argument("--renormalize", action="store_true", help="rebuild normalized thumbnails from originals")
     return p.parse_args()
 

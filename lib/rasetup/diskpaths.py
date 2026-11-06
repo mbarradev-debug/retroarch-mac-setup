@@ -1,7 +1,7 @@
-"""Detect retroarch.cfg directories that no longer point to the external disk, and rescue files.
+"""Detect retroarch.cfg directories that no longer point to the library, and rescue files.
 
-When RetroArch starts and a configured directory does not exist (the disk is not mounted yet,
-or macOS has not granted access to removable volumes), it falls back to its default
+When RetroArch starts and a configured directory does not exist (the library's disk is not
+mounted yet, or macOS has not granted access to removable volumes), it falls back to its default
 (~/Documents/RetroArch/saves, .../states, screenshots "default") and, with
 config_save_on_exit, writes that fallback into retroarch.cfg when it quits. From then on saves
 and states go to the Mac, and the MAME cores read their button layouts (cfg/default.cfg,
@@ -12,9 +12,9 @@ import filecmp
 import os
 import shutil
 
-from .common import RA_CFG, VOLUME, ensure_dir, info, ok, warn
+from .common import LIBRARY, RA_CFG, ensure_dir, info, ok, warn
 
-# keys whose files are copied back to the disk when the key pointed somewhere else
+# keys whose files are copied back to the library when the key pointed somewhere else
 RESCUE = ("savefile_directory", "savestate_directory", "screenshot_directory")
 
 
@@ -30,11 +30,11 @@ def _resolve(v):
 
 
 def wrong_paths(wanted):
-    """[(key, current, wanted)] for managed keys that should be on the disk but are not."""
+    """[(key, current, wanted)] for managed keys that should be in the library but are not."""
     cur = _current()
     out = []
     for k, w in wanted.items():
-        if not w.startswith(VOLUME + "/") or k not in cur:
+        if not w.startswith(LIBRARY + "/") or k not in cur:
             continue
         if _resolve(cur[k]) != os.path.realpath(w):
             out.append((k, cur[k], w))
@@ -62,14 +62,15 @@ def _rescue(src, dst):
 
 
 def check(wanted):
-    """Report directories off the disk and copy their new files to the disk.
+    """Report directories outside the library and copy their new files into it.
     The caller then rewrites the keys (merge_cfg). Returns the number of wrong keys."""
     bad = wrong_paths(wanted)
     if not bad:
-        ok("retroarch.cfg directories point to the disk")
+        ok(f"retroarch.cfg directories point to the library ({LIBRARY})")
         return 0
-    warn("retroarch.cfg has directories outside the disk. RetroArch was probably opened before "
-         f"{VOLUME} was mounted (or without access to removable volumes) and saved its defaults:")
+    warn("retroarch.cfg has directories outside the library. RetroArch was probably opened while "
+         f"{LIBRARY} was not available (disk not mounted yet, or no access to removable volumes) "
+         "and saved its defaults:")
     for k, cur, w in bad:
         info(f"{k} = \"{cur}\"  (should be {w})")
     for k, cur, w in bad:
@@ -78,9 +79,9 @@ def check(wanted):
             continue
         copied, conflicts = _rescue(src, w)
         for rel in copied:
-            info(f"copied to the disk: {rel}")
+            info(f"copied to the library: {rel}")
         for rel in conflicts:
-            warn(f"differs from the copy on the disk, left in {src}: {rel}")
+            warn(f"differs from the copy in the library, left in {src}: {rel}")
         if copied or conflicts:
             info(f"{src} is no longer used; delete it once you have checked the files above")
     return len(bad)

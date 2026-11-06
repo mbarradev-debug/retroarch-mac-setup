@@ -1,10 +1,12 @@
 #!/bin/bash
-# Reverts the folder renames/merges done by setup.sh, newest first, using the log on the disk.
+# Reverts the folder renames/merges done by setup.sh, newest first, using the log in the library.
 # ROM files are only moved back to where they were; nothing is deleted.
 set -euo pipefail
-LOG="/Volumes/BACKUP/retroarch-cache/rename-log.tsv"
-
-mount | grep -q " on /Volumes/BACKUP " || { echo "✖ /Volumes/BACKUP is not mounted." >&2; exit 1; }
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/library.sh
+source "$HERE/lib/library.sh"
+resolve_library "$@"
+LOG="$CACHE/rename-log.tsv"
 [[ -s "$LOG" ]] || { echo "Nothing to undo ($LOG is empty or missing)."; exit 0; }
 
 echo "Changes recorded in $LOG:"

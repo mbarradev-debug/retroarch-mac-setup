@@ -3,12 +3,9 @@
 # Idempotent: safe to run as many times as you want. See README.md.
 set -euo pipefail
 
-VOLUME="/Volumes/BACKUP"
-ROMS="$VOLUME/roms"
-CACHE="$VOLUME/retroarch-cache"
-TOOLS="$CACHE/tools"
-PY_DIR="$TOOLS/python"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/library.sh
+source "$HERE/lib/library.sh"
 
 bold() { printf '\033[1;36m==> %s\033[0m\n' "$*"; }
 fail() { printf '\033[31m✖ %s\033[0m\n' "$*" >&2; exit 1; }
@@ -17,21 +14,21 @@ fail() { printf '\033[31m✖ %s\033[0m\n' "$*" >&2; exit 1; }
 [[ "$(uname -s)" == "Darwin" ]] || fail "This script is for macOS."
 [[ "$(uname -m)" == "arm64" ]]  || fail "This script targets Apple Silicon (arm64)."
 
-if ! mount | grep -q " on $VOLUME "; then
-  fail "The external disk is not mounted at $VOLUME. Connect the BACKUP disk and run ./setup.sh again."
-fi
-[[ -d "$ROMS" ]] || fail "$ROMS does not exist. Nothing to do."
-[[ -w "$VOLUME" ]] || fail "$VOLUME is not writable."
+# game library (roms/, bios/, saves, cache): --library / --roms, saved choice, or asked once
+resolve_library "$@"
+bold "Library: $LIBRARY (ROMs: $ROMS)"
+TOOLS="$CACHE/tools"
+PY_DIR="$TOOLS/python"
 mkdir -p "$CACHE" "$TOOLS"
 
 # ------------------------------------------------------------------ Python (portable copy kept on the disk)
 # macOS' /usr/bin/python3 needs the Command Line Tools (internet). A standalone CPython from
-# python-build-standalone is cached on the external disk so the script also works offline
+# python-build-standalone is cached in the library so the script also works offline
 # right after reinstalling macOS.
 online() { curl -fsI --max-time 6 https://api.github.com >/dev/null 2>&1; }
 
 install_portable_python() {
-  bold "Caching a portable Python on the external disk ($PY_DIR)"
+  bold "Caching a portable Python in the library ($PY_DIR)"
   local api="https://api.github.com/repos/astral-sh/python-build-standalone/releases/latest"
   local json url sums name tmp
   json="$(curl -fsSL "$api")"

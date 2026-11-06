@@ -92,7 +92,7 @@ def base_values():
 
 
 def check_paths():
-    """--check-paths: only put the disk directories back in retroarch.cfg (rescuing files)."""
+    """--check-paths: only put the library directories back in retroarch.cfg (rescuing files)."""
     step("Checking retroarch.cfg directories")
     _require_closed()
     values = base_values()
@@ -114,7 +114,7 @@ def configure(systems, present, cores, manifest, controller_option=None):
     shutil.copy2(font_src, _font_path())
 
     values = base_values()
-    diskpaths.check(values)          # before merge_cfg: rescues files saved off the disk
+    diskpaths.check(values)          # before merge_cfg: rescues files saved outside the library
     merge_cfg(RA_CFG, values)
     ok(f"retroarch.cfg: {len(values)} managed keys → {RA_CFG}")
 

@@ -14,7 +14,7 @@ and Switch Pro controllers are detected and get the right profile too.
 * CRT shaders tuned on the M4's own panel: **arcade slot mask** for MAME/Neo Geo, **Sony Trinitron aperture grille** for TV consoles, dot-matrix LCD for handhelds. No curvature.
 * Pixel-art menu font (Pixelify Sans, SIL OFL 1.1).
 * **Gameplay snapshots only** (libretro-thumbnails `Named_Snaps`), normalized to one canvas size.
-* Permanent cache on the external disk: after a reformat, it works **offline**.
+* Everything lives in one **library folder** you choose (an external disk or any folder): games, BIOS, saves and a permanent cache, so after a reformat it works **offline**.
 
 ## What it looks like
 
@@ -36,9 +36,13 @@ the phosphor structure is visible on GitHub.
 Both looks were chosen by comparing four candidates on the same frames, on this panel; see
 [Shaders](#shaders-one-preset-per-system) for the details.
 
-## Disk layout
+## Library layout
 
-Everything the script needs lives in two places on the external disk:
+Everything the script keeps lives in one folder, the **library**. It can be an external disk
+(it survives reformatting the Mac) or any folder. You only need `roms/` with one folder per
+system inside, named after libretro (`Nintendo - Super Nintendo Entertainment System`) or
+ES-DE (`snes`, `megadrive`, `mame`, `n64` …; the script offers to rename them); the rest is
+created by the script. This project's own library is the disk `/Volumes/BACKUP`:
 
 ```
 /Volumes/BACKUP/
@@ -69,20 +73,33 @@ cd retroarch-mac-setup
 ./setup.sh
 ```
 
-The script stops with a clear message if `/Volumes/BACKUP` is not mounted. It asks before
-it renames folders, moves ROMs or replaces a non-native RetroArch. You can run it as many
-times as you like. To add a system, drop a new folder into `/Volumes/BACKUP/roms` (an ES-DE
-short name such as `n64` works) and run it again.
+The first time, the script asks where the [library](#library-layout) is: type its path or drag
+the folder into Terminal (the `roms` folder itself also works). It remembers the answer (in
+`~/Library/Application Support/RetroArch/retroarch-mac-setup/settings.cfg`), and on a Mac that
+has never run it, a disk under `/Volumes` that already holds `roms/` and `retroarch-cache/` is
+picked up without asking. To choose it up front:
+
+```bash
+./setup.sh --library "/Volumes/My Disk"          # roms/ inside it
+./setup.sh --library ~/Games --roms "/Volumes/Other/ROMs"   # ROMs kept somewhere else
+```
+
+If the library is on a disk that is not connected, the script says so and stops (or asks for
+the new path, if the disk was renamed). It asks before it renames folders, moves ROMs or
+replaces a non-native RetroArch. You can run it as many times as you like. To add a system,
+drop a new folder into `roms/` (an ES-DE short name such as `n64` works) and run it again.
 
 | Option | Effect |
 |---|---|
+| `--library PATH` | Chooses the library (remembered). See above |
+| `--roms PATH` | ROM folder, when it is not `<library>/roms` (remembered; a new `--library` resets it) |
 | `--refresh-missing` | Searches again online for ROMs marked "no snapshot" and offers to move back the ones that now have one |
 | `--update` | Re-downloads RetroArch, cores, shaders and DATs even if they are cached |
 | `--offline` | Never touches the network |
 | `--canvas 1280x960` | Changes the thumbnail canvas. Everything is rebuilt from `originals/` with no downloads |
 | `--renormalize` | Rebuilds every normalized thumbnail from `originals/` |
 | `--controller nintendo\|standard\|auto` | Forces the controller profile (see [Other controllers](#other-controllers)); it is remembered. `auto` goes back to detecting it |
-| `--check-paths` | Only checks that saves, states, screenshots and BIOS in `retroarch.cfg` point to the disk, and puts them back if not (see [Troubleshooting](#troubleshooting-buttons-or-saves-suddenly-wrong)). Takes a second |
+| `--check-paths` | Only checks that saves, states, screenshots and BIOS in `retroarch.cfg` point to the library, and puts them back if not (see [Troubleshooting](#troubleshooting-buttons-or-saves-suddenly-wrong)). Takes a second |
 
 ## What the script does, in order
 
@@ -103,7 +120,7 @@ short name such as `n64` works) and run it again.
 4. **Configuration.** Merges `config/retroarch.base.cfg` into
    `~/Library/Application Support/RetroArch/config/retroarch.cfg`; your other settings are
    kept. Before that it checks that saves, states, screenshots and BIOS still point to the
-   disk, and rescues anything RetroArch saved elsewhere meanwhile (see
+   library, and rescues anything RetroArch saved elsewhere meanwhile (see
    [Troubleshooting](#troubleshooting-buttons-or-saves-suddenly-wrong)). It also writes per-core overrides and options, a 4:3 override and a shader preset per
    system folder. RetroArch never changes the screen resolution or scaling of the desktop.
 5. **BIOS.** Checks the BIOS files with MD5 hashes taken from libretro's `System.dat` and
@@ -284,8 +301,8 @@ RetroArch's default keyboard keys stay active next to the controller:
 
 On the controller the same search is the **X** button in a game list.
 
-> **Only one click is needed, once.** The first time RetroArch reads `/Volumes/BACKUP`,
-> macOS asks whether it may access a removable volume. Click **Allow**, or enable it ahead of
+> **Only one click is needed, once.** If the library is on an external disk, the first time
+> RetroArch reads it macOS asks whether it may access a removable volume. Click **Allow**, or enable it ahead of
 > time in *System Settings → Privacy & Security → Files and Folders → RetroArch → Removable
 > Volumes*. A permission dialog cannot be answered with the controller.
 
@@ -358,8 +375,8 @@ be redistributed. It is also used for on-screen notifications.
   bars. Snapshots smaller than the canvas get a pixel-perfect integer upscale
   (nearest-neighbour). Larger ones are scaled down to fit. Nothing is cropped or deformed:
   SNES 8:7, GBA 3:2 and vertical arcade games all keep their shape.
-* RetroArch reads them **directly from the external disk**
-  (`thumbnails_directory = /Volumes/BACKUP/retroarch-cache/thumbnails/normalized`). Ozone
+* RetroArch reads them **directly from the library**
+  (`thumbnails_directory = <library>/retroarch-cache/thumbnails/normalized`). Ozone
   loads thumbnails asynchronously and each one is a small PNG, so a USB disk adds no visible
   delay. Copying them to the Mac would only duplicate gigabytes of data.
 * **Videos in the menu:** RetroArch cannot play video previews in its menu. If you want
@@ -401,15 +418,16 @@ full game name from the DAT.
 
 ## BIOS
 
-Put BIOS files in **`/Volumes/BACKUP/bios/`**, the RetroArch *system* directory, with the
+Put BIOS files in **`<library>/bios/`** (here `/Volumes/BACKUP/bios/`), the RetroArch *system* directory, with the
 exact file name. The script checks them by MD5 and lists what is missing in `bios.txt`.
 PlayStation (SwanStation) needs one of these: `scph5501.bin` (US), `scph5500.bin` (JP) or
 `scph5502.bin` (EU). Every BIOS the map knows about is listed in `systems.json`.
 
 ## Restoring after reformatting the Mac
 
-1. Install macOS, connect the **BACKUP** disk and get this folder back (`git clone`, or copy it).
-2. Run `./setup.sh`. **No internet needed.** From the cache on the disk it uses:
+1. Install macOS, connect the library's disk and get this folder back (`git clone`, or copy it).
+2. Run `./setup.sh` (it finds the library on its own; otherwise add `--library PATH`).
+   **No internet needed.** From the cache in the library it uses:
    * a portable Python, so no Command Line Tools are needed;
    * the cached RetroArch DMG, installed with `hdiutil` and `ditto`;
    * the cached cores, shaders and DATs;
@@ -417,7 +435,7 @@ PlayStation (SwanStation) needs one of these: `scph5501.bin` (US), `scph5500.bin
 
    Without internet and without ImageMagick, new thumbnails are normalized with macOS's
    `sips`.
-3. Saves, states and BIOS were already on the disk. Playlists are regenerated.
+3. Saves, states and BIOS were already in the library. Playlists are regenerated.
 4. Pair the controller again in **Switch mode** (START + Y, as above) and allow access to
    removable volumes once.
 
@@ -437,7 +455,7 @@ For each system it records:
 * the DAT used for CRC identification;
 * the shader preset, plus optional per-core `overrides` and `core_options`.
 
-Drop a folder with an ES-DE name (for example `n64`) into `/Volumes/BACKUP/roms` and run the
+Drop a folder with an ES-DE name (for example `n64`) into the library's `roms/` and run the
 script. It proposes the rename, with the same confirmation, and integrates the system.
 
 ## Troubleshooting: the controller does not respond
@@ -476,7 +494,7 @@ Symptoms: MAME games no longer follow the button layouts (Tumble Pop does not fi
 jump with B, CPS games have the punches in the wrong places), saves or states are missing, or
 `~/Documents/RetroArch` has appeared.
 
-Cause: RetroArch was opened while `/Volumes/BACKUP` was not mounted yet, or before macOS gave
+Cause: RetroArch was opened while the library's disk was not mounted yet, or before macOS gave
 it access to removable volumes. When a configured directory does not exist, RetroArch falls
 back to its default (`~/Documents/RetroArch/saves`, `.../states`, screenshots `default`), and
 because it saves `retroarch.cfg` when it quits, the fallback stays. From then on saves and
@@ -490,13 +508,13 @@ Fix: quit RetroArch and run
 ./setup.sh --check-paths
 ```
 
-It lists the directories that point off the disk, copies to the disk every file saved in the
-fallback folders meanwhile (it never overwrites a file on the disk; one that differs is listed
-and left where it is, for you to choose) and writes the disk paths back. A normal `./setup.sh`
+It lists the directories that point outside the library, copies into the library every file
+saved in the fallback folders meanwhile (it never overwrites a file there; one that differs is
+listed and left where it is, for you to choose) and writes the library paths back. A normal `./setup.sh`
 run does the same check. Afterwards `~/Documents/RetroArch` is no longer used and can be
 deleted.
 
-To avoid it, connect the disk and wait for it to appear in Finder before opening RetroArch.
+To avoid it, connect the library's disk and wait for it to appear in Finder before opening RetroArch.
 
 ## Troubleshooting: RetroArch quits when a MAME game starts
 
@@ -515,7 +533,7 @@ opening the game first thing in a fresh session avoids it.
 
 | Path | Purpose |
 |---|---|
-| `setup.sh` | Entry point: checks the disk, provides Python, runs `lib/main.py` |
+| `setup.sh` | Entry point: finds the library (`lib/library.sh`), provides Python, runs `lib/main.py` |
 | `undo-rename.sh` | Reverts the folder renames and merges recorded in `rename-log.tsv` |
 | `systems.json` | System map (folder name, ES-DE names, cores, extensions, BIOS, shader…) |
 | `config/retroarch.base.cfg` | Managed `retroarch.cfg` keys (every key checked against RetroArch 1.22.2) |
