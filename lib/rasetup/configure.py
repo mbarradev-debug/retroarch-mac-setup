@@ -5,9 +5,9 @@ import re
 import shutil
 
 from . import controller, diskpaths
-from .common import (BIOS_DIR, CACHE, PROJECT, RA_AUTOCONFIG, RA_CFG, RA_CONFIG_DIR, RA_HOME,
-                     RA_PLAYLISTS, RA_PROJECT_ASSETS, RA_SHADERS, SAVES_DIR, ensure_dir, info, ok,
-                     run, step, warn)
+from .common import (BIOS_DIR, CACHE, PROJECT, RA_AUTOCONFIG, RA_CFG, RA_CFG_LINK, RA_CONFIG_DIR,
+                     RA_HOME, RA_PLAYLISTS, RA_PROJECT_ASSETS, RA_SHADERS, RA_STORE, SAVES_DIR,
+                     ensure_dir, info, now_iso, ok, run, step, warn)
 
 MARK = "# managed by retroarch-mac-setup"
 _LINE = re.compile(r'^\s*([A-Za-z0-9_.-]+)\s*=\s*(.*)$')   # core options use '-' (mame2003-plus_…)
@@ -87,14 +87,45 @@ def _font_path():
 
 
 def base_values():
-    subs = {"RA_HOME": RA_HOME, "CACHE": CACHE, "BIOS": BIOS_DIR, "SAVES": SAVES_DIR, "FONT": _font_path()}
+    subs = {"RA_HOME": RA_HOME, "CACHE": CACHE, "BIOS": BIOS_DIR, "SAVES": SAVES_DIR, "FONT": _font_path(),
+            "CONFIG": RA_STORE}
     return read_template(os.path.join(PROJECT, "config/retroarch.base.cfg"), subs)
+
+
+def link_config():
+    """Make RetroArch's retroarch.cfg a symlink to the one in the library. The first time, the
+    Mac's config (retroarch.cfg, overrides, core options, remaps) is moved/copied there."""
+    ensure_dir(RA_STORE)
+    ensure_dir(os.path.dirname(RA_CFG_LINK))
+    if os.path.islink(RA_CFG_LINK):
+        if os.readlink(RA_CFG_LINK) == RA_CFG:
+            return
+        info(f"retroarch.cfg pointed to {os.readlink(RA_CFG_LINK)}; now → {RA_CFG}")
+        os.remove(RA_CFG_LINK)
+    elif os.path.exists(RA_CFG_LINK):
+        old_dir = os.path.dirname(RA_CFG_LINK)
+        if not os.path.exists(RA_CFG):
+            shutil.move(RA_CFG_LINK, RA_CFG)
+            ok(f"retroarch.cfg moved to the library ({RA_CFG})")
+        else:
+            keep = RA_CFG_LINK + ".mac-" + now_iso().replace(":", "")
+            os.rename(RA_CFG_LINK, keep)
+            warn(f"the library already has a retroarch.cfg; the Mac's one is kept as {keep}")
+        copied, conflicts = diskpaths.rescue(old_dir, RA_CONFIG_DIR,
+                                             skip=lambda rel: rel.startswith("retroarch.cfg"))
+        if copied:
+            ok(f"{len(copied)} override/core option/remap file(s) copied from {old_dir} to the library")
+        for rel in conflicts:
+            warn(f"already in the library with other contents, kept there: {rel}")
+    os.symlink(RA_CFG, RA_CFG_LINK)
+    ok(f"{RA_CFG_LINK} → {RA_CFG}")
 
 
 def check_paths():
     """--check-paths: only put the library directories back in retroarch.cfg (rescuing files)."""
     step("Checking retroarch.cfg directories")
     _require_closed()
+    link_config()
     values = base_values()
     if diskpaths.check(values):
         merge_cfg(RA_CFG, {k: values[k] for k, _, _ in diskpaths.wrong_paths(values)})
@@ -104,6 +135,7 @@ def check_paths():
 def configure(systems, present, cores, manifest, controller_option=None):
     step("Configuring RetroArch")
     _require_closed()
+    link_config()
 
     for d in (BIOS_DIR, SAVES_DIR + "/saves", SAVES_DIR + "/states", SAVES_DIR + "/screenshots",
               RA_PLAYLISTS, RA_AUTOCONFIG + "/mfi", RA_PROJECT_ASSETS):

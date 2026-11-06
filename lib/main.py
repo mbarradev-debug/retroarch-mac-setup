@@ -167,6 +167,8 @@ def main():
 
     # 2. RetroArch, cores, shaders
     ra = install.ensure_retroarch(manifest, args.update)
+    if ra:
+        install.extract_bundle_assets(manifest, ra["version"])
     manifest.save()
     needed = sorted({c for n in present for c in systems[n]["cores"]})
     cores = install.ensure_cores(needed, manifest, args.update)

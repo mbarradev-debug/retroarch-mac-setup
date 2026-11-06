@@ -10,8 +10,8 @@ import sys
 import tempfile
 import zipfile
 
-from .common import (APP, BUILDBOT_ASSETS, BUILDBOT_CORES, CACHE, Net, PROJECT, RA_CORES, RA_INFO,
-                     RA_SHADERS, confirm, download, ensure_dir, err, file_sha256, http_get, info,
+from .common import (APP, BUILDBOT_ASSETS, BUILDBOT_CORES, CACHE, Net, PROJECT, RA_CORES, RA_HOME,
+                     RA_INFO, RA_SHADERS, confirm, download, ensure_dir, err, file_sha256, http_get, info,
                      now_iso, ok, pending, run, step, warn, which)
 
 INSTALLER_DIR = CACHE + "/installer"
@@ -118,6 +118,32 @@ def ensure_retroarch(manifest, update=False):
         return None
     ok("Vulkan driver present (MoltenVK bundled)" + (", glcore available as fallback" if cur["glcore"] else ""))
     return cur
+
+
+def extract_bundle_assets(manifest, version):
+    """Extract RetroArch.app's assets.zip (menu icons, sounds, overlays, databases, cheats) into
+    RetroArch's folder, as RetroArch does on its first launch. The script does it so it happens
+    *before* the newer core info files and shaders are installed: RetroArch's own extraction
+    (disabled in retroarch.base.cfg) ran on the first launch after the script and replaced them
+    with the older bundled ones. Repeated only when the app changes."""
+    zpath = os.path.join(APP, "Contents/Resources/assets.zip")
+    if not os.path.exists(zpath):
+        return
+    st = os.stat(zpath)
+    key = f"{version}:{st.st_size}:{int(st.st_mtime)}"
+    if manifest["downloads"].get("bundle_assets") == key and os.path.isdir(os.path.join(RA_HOME, "assets")):
+        ok("bundled assets already extracted")
+        return
+    info("extracting the app's bundled assets (menu icons, overlays, databases) …")
+    ensure_dir(RA_HOME)
+    with zipfile.ZipFile(zpath) as z:
+        z.extractall(RA_HOME)
+    # the bundle also carries shaders_slang: make ensure_shaders put the cached pack back
+    marker = os.path.join(RA_SHADERS, "shaders_slang", ".retroarch-mac-setup-sha256")
+    if os.path.exists(marker):
+        os.remove(marker)
+    manifest["downloads"]["bundle_assets"] = key
+    ok("bundled assets extracted")
 
 
 # ---------------------------------------------------------------- cores + info

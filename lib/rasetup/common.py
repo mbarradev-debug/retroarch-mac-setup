@@ -24,13 +24,18 @@ BIOS_DIR = LIBRARY + "/bios"
 SAVES_DIR = LIBRARY + "/retroarch-saves"
 
 RA_HOME = os.path.expanduser("~/Library/Application Support/RetroArch")
-RA_CONFIG_DIR = RA_HOME + "/config"
-RA_CFG = RA_CONFIG_DIR + "/retroarch.cfg"
+# RetroArch's configuration lives in the library (survives a reformat, and RetroArch cannot
+# overwrite it while the library is missing). RetroArch always loads RA_CFG_LINK, a symlink to
+# RA_CFG; it saves through the link in place (config_file_write: fopen "wb").
+RA_CFG_LINK = RA_HOME + "/config/retroarch.cfg"
+RA_STORE = LIBRARY + "/retroarch-config"
+RA_CFG = RA_STORE + "/retroarch.cfg"
+RA_CONFIG_DIR = RA_STORE + "/config"          # rgui_config_directory: overrides, core options, remaps
 RA_CORES = RA_HOME + "/cores"
 RA_INFO = RA_HOME + "/info"
 RA_SHADERS = RA_HOME + "/shaders"
 RA_PLAYLISTS = RA_HOME + "/playlists"
-RA_AUTOCONFIG = RA_HOME + "/autoconfig"
+RA_AUTOCONFIG = RA_STORE + "/autoconfig"     # joypad_autoconfig_dir
 RA_PROJECT_ASSETS = RA_HOME + "/retroarch-mac-setup"
 APP = "/Applications/RetroArch.app"
 

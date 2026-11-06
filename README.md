@@ -49,7 +49,11 @@ created by the script. This project's own library is the disk `/Volumes/BACKUP`:
 ├── roms/                      your games (folders named after libretro-database systems)
 │   └── _no_snapshot/<system>/ ROMs without a gameplay snapshot (moved, never deleted)
 ├── bios/                      BIOS files (you put them here; RetroArch "system" directory)
-├── retroarch-saves/           saves/, states/, screenshots/
+├── retroarch-saves/           saves/, states/, screenshots/ (MAME button layouts too: saves/<core>/<core>/cfg/)
+├── retroarch-config/          RetroArch's configuration, kept across reformats
+│   ├── retroarch.cfg          the Mac's ~/Library/Application Support/RetroArch/config/retroarch.cfg links here
+│   ├── config/                per-core overrides and options, folder shader presets, remaps/
+│   └── autoconfig/mfi/        the controller profile
 └── retroarch-cache/
     ├── installer/             RetroArch_Metal-<version>.dmg (offline install)
     ├── cores/                 *_libretro.dylib.zip + info.zip
@@ -117,12 +121,20 @@ drop a new folder into `roms/` (an ES-DE short name such as `n64` works) and run
 3. **Cores, info files and shaders.** Downloaded from the libretro buildbot for
    `apple/osx/arm64` and cached. Each core is asked its `library_name`, which is the name
    RetroArch uses for override folders.
-4. **Configuration.** Merges `config/retroarch.base.cfg` into
-   `~/Library/Application Support/RetroArch/config/retroarch.cfg`; your other settings are
-   kept. Before that it checks that saves, states, screenshots and BIOS still point to the
-   library, and rescues anything RetroArch saved elsewhere meanwhile (see
-   [Troubleshooting](#troubleshooting-buttons-or-saves-suddenly-wrong)). It also writes per-core overrides and options, a 4:3 override and a shader preset per
-   system folder. RetroArch never changes the screen resolution or scaling of the desktop.
+4. **Configuration.** RetroArch's configuration lives in the library, in `retroarch-config/`
+   (see [Library layout](#library-layout)): `~/Library/Application Support/RetroArch/config/retroarch.cfg`
+   becomes a link to `retroarch-config/retroarch.cfg`, and the override, remap and controller
+   profile folders point there too. The first time, an existing configuration on the Mac is
+   moved there. Then it merges `config/retroarch.base.cfg` into it; your other settings, including
+   those changed in RetroArch's menus, are kept. It checks that saves, states, screenshots and
+   BIOS still point to the library, and rescues anything RetroArch saved elsewhere (see
+   [Troubleshooting](#troubleshooting-buttons-or-saves-suddenly-wrong)). It also writes per-core
+   overrides and options, a 4:3 override and a shader preset per system folder.
+
+   Right after installing RetroArch, the script also extracts the app's bundled assets (menu
+   icons, overlays, databases) itself, before the newer core info files and shaders, and turns
+   off RetroArch's own first-launch extraction: that one ran after the script and replaced the
+   controller profile, the core info files and the shaders with the older bundled copies. RetroArch never changes the screen resolution or scaling of the desktop.
 5. **BIOS.** Checks the BIOS files with MD5 hashes taken from libretro's `System.dat` and
    the core `.info` files. It tells you which ones are missing and where they go. Nothing is
    ever downloaded.
@@ -435,7 +447,9 @@ PlayStation (SwanStation) needs one of these: `scph5501.bin` (US), `scph5500.bin
 
    Without internet and without ImageMagick, new thumbnails are normalized with macOS's
    `sips`.
-3. Saves, states and BIOS were already in the library. Playlists are regenerated.
+3. Saves, states, BIOS and RetroArch's configuration (with anything you changed in its menus)
+   were already in the library; the Mac's `retroarch.cfg` is linked to it again. Playlists are
+   regenerated.
 4. Pair the controller again in **Switch mode** (START + Y, as above) and allow access to
    removable volumes once.
 
@@ -494,8 +508,8 @@ Symptoms: MAME games no longer follow the button layouts (Tumble Pop does not fi
 jump with B, CPS games have the punches in the wrong places), saves or states are missing, or
 `~/Documents/RetroArch` has appeared.
 
-Cause: RetroArch was opened while the library's disk was not mounted yet, or before macOS gave
-it access to removable volumes. When a configured directory does not exist, RetroArch falls
+Cause (installs older than `retroarch-config/`, see below): RetroArch was opened while the
+library's disk was not mounted yet, or before macOS gave it access to removable volumes. When a configured directory does not exist, RetroArch falls
 back to its default (`~/Documents/RetroArch/saves`, `.../states`, screenshots `default`), and
 because it saves `retroarch.cfg` when it quits, the fallback stays. From then on saves and
 states go to the Mac, and the MAME cores read their button layouts (`cfg/default.cfg`,
@@ -514,7 +528,32 @@ listed and left where it is, for you to choose) and writes the library paths bac
 run does the same check. Afterwards `~/Documents/RetroArch` is no longer used and can be
 deleted.
 
-To avoid it, connect the library's disk and wait for it to appear in Finder before opening RetroArch.
+Since `retroarch.cfg` lives in the library this cannot stick any more: without the disk the
+link on the Mac points nowhere, RetroArch starts with its defaults, and its save on quit fails
+instead of replacing your configuration. Connect the disk before opening RetroArch anyway, or
+nothing in the menu will be yours.
+
+A different cause of the same symptom, now fixed: after a clean install, RetroArch's first
+launch extracted its bundled controller profiles over the script's one (A/B and X/Y swapped on
+the SN30 Pro). Running `./setup.sh` again puts the right profile back.
+
+## Troubleshooting: "RetroArch quit unexpectedly" after Cmd+Q
+
+Seen with RetroArch 1.22.2 after playing a game on MAME 2010. The crash report
+(`~/Library/Logs/DiagnosticReports/RetroArch-*.ips`) shows `EXC_BAD_ACCESS` in
+`machine_config::~machine_config()` under `resource_pool::~resource_pool()`, inside `exit()`:
+the MAME 2010 core's global memory pool is destroyed while the process ends, and it frees
+objects that are no longer valid. It is a bug in the core, not in this configuration.
+
+**Cmd+Q does not close the game.** RetroArch answers macOS's quit request by saving its
+configuration and letting macOS end the process at once (`applicationShouldTerminate` in
+`ui/drivers/ui_cocoa.m`), so the core never gets to unload the game. Battery saves are safe up
+to the last 10 seconds (`autosave_interval`), but anything a core writes only when the game
+closes is lost, such as MAME's hiscores (`hi/`) and nvram. RetroArch's own quit goes through
+its normal shutdown and closes the game first:
+
+* **L2 + X, twice**, or *Main Menu → Quit RetroArch*; or
+* close the game with **L2 + Select**, then quit.
 
 ## Troubleshooting: RetroArch quits when a MAME game starts
 

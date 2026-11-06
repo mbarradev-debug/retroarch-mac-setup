@@ -16,6 +16,10 @@ from .common import LIBRARY, RA_CFG, ensure_dir, info, ok, warn
 
 # keys whose files are copied back to the library when the key pointed somewhere else
 RESCUE = ("savefile_directory", "savestate_directory", "screenshot_directory")
+# directories RetroArch replaces with its default when they are missing at startup. The config
+# directories (rgui_config_directory …) are not here: they are only read from retroarch.cfg,
+# which is itself in the library, and a new run simply sets them.
+CHECKED = RESCUE + ("system_directory", "thumbnails_directory")
 
 
 def _current():
@@ -34,14 +38,14 @@ def wrong_paths(wanted):
     cur = _current()
     out = []
     for k, w in wanted.items():
-        if not w.startswith(LIBRARY + "/") or k not in cur:
+        if k not in CHECKED or not w.startswith(LIBRARY + "/") or k not in cur:
             continue
         if _resolve(cur[k]) != os.path.realpath(w):
             out.append((k, cur[k], w))
     return out
 
 
-def _rescue(src, dst):
+def rescue(src, dst, skip=None):
     """Copy files from src that are not in dst. Never overwrites: differing files are listed."""
     copied, conflicts = [], []
     for root, dirs, files in os.walk(src):
@@ -51,6 +55,8 @@ def _rescue(src, dst):
                 continue
             s = os.path.join(root, name)
             rel = os.path.relpath(s, src)
+            if skip and skip(rel):
+                continue
             d = os.path.join(dst, rel)
             if not os.path.exists(d):
                 ensure_dir(os.path.dirname(d))
@@ -77,7 +83,7 @@ def check(wanted):
         src = _resolve(cur)
         if k not in RESCUE or not src or not os.path.isdir(src):
             continue
-        copied, conflicts = _rescue(src, w)
+        copied, conflicts = rescue(src, w)
         for rel in copied:
             info(f"copied to the library: {rel}")
         for rel in conflicts:
